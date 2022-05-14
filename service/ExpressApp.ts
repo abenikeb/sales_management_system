@@ -1,7 +1,7 @@
 import express, { Application, Request } from "express";
-
 import bodyParser from "body-parser";
 import path from "path";
+
 import {
   AdminRoute,
   UserRoute,
