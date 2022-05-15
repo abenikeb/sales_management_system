@@ -8,6 +8,8 @@ import {
   // CustomerRoute,
   // DeliveryRoute,
   VendorRoute,
+  OrderRoute,
+  ProductRoute,
 } from "../router";
 import { error } from "../middleware/error";
 
@@ -21,6 +23,8 @@ export default async (app: Application) => {
   app.use("/api/user", UserRoute);
   // app.use("/delivery", DeliveryRoute);
   app.use("/api/vendor", VendorRoute);
+  app.use("/api/order", OrderRoute);
+  app.use("/api/product", ProductRoute);
   app.use(error);
 
   return app;

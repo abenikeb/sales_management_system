@@ -1,3 +1,7 @@
+INSERT INTO users_group (name,_desc) VALUES('ADMIN','he/she access the whole previlage');
+INSERT INTO users_group (name,_desc) VALUES('STORE_MANAGER','he/she access the store/inventory function');
+INSERT INTO users_group (name,_desc) VALUES('SALE_MANAGER','he/she access the sales dept');
+
 CREATE TABLE "users_group" (
   "id" BIGSERIAL PRIMARY KEY,
   "name" varchar,
@@ -8,10 +12,12 @@ CREATE TABLE "users" (
   "id" BIGSERIAL PRIMARY KEY,
   "first_name" varchar NOT NULL,
   "last_name" varchar NOT NULL,
+  "user_name" varchar,
   "verified" boolean,
   "email" varchar,
   "tel" varchar NOT NULL,
   "password" text,
+  "forgot_password" text,
   "salt" text,
   "otp" varchar,
   "otp_expiry" timestamp,
@@ -42,24 +48,28 @@ CREATE TABLE "customers" (
   "email" varchar,
   "tel" varchar NOT NULL,
   "business_licenses_no" varchar,
-  "type_no" int,
+  "plate_no" varchar,
+  "type_id" int,
   "territory" varchar,
   "city" varchar,
-  "lat" "numeric(8, 6)",
-  "lng" "numeric(8, 6)",
-  "created_at" timestamp,
-  "modified_at" timestamp
+  "lat" numeric(8, 6),
+  "lng" numeric(8, 6),
+  "created_at" timestamp DEFAULT (now()),
+  "modified_at" timestamp DEFAULT (now())
 );
 
 CREATE TABLE "products" (
   "id" BIGSERIAL PRIMARY KEY,
-  "name" varchar,
-  "_desc" text,
   "product_sku" int NOT NULL,
-  "product_images" text,
-  "created_at" date DEFAULT (now()),
-  "modified_at" date DEFAULT (now())
+  "_desc" text,
+  "product_images" text[],
+  "created_by" int,
+  "created_at" timestamp DEFAULT (now()),
+  "modified_at" timestamp DEFAULT (now())
 );
+
+ALTER TABLE products 
+    ALTER COLUMN product_sku TYPE numeric(3,1);
 
 CREATE TABLE "product_inventories" (
   "id" BIGSERIAL PRIMARY KEY,
@@ -68,24 +78,24 @@ CREATE TABLE "product_inventories" (
   "out_of_stock" int,
   "in_stock" int,
   "running_low" varchar,
-  "created_at" timestamp,
-  "modified_at" timestamp
+  "created_at" timestamp DEFAULT (now()),
+  "modified_at" timestamp DEFAULT (now())
 );
 
 CREATE TABLE "product_prices" (
   "id" BIGSERIAL PRIMARY KEY,
   "product_id" int,
   "user_categories_id" int,
-  "price" "numeric(10, 2)" NOT NULL,
-  "created_at" timestamp,
-  "modified_at" timestamp
+  "price" numeric(10, 2) NOT NULL,
+  "created_at" timestamp DEFAULT (now()),
+  "modified_at" timestamp DEFAULT (now())
 );
 
 CREATE TABLE "product_promotion" (
   "id" BIGSERIAL PRIMARY KEY,
   "product_id" int,
   "user_categories_id" int,
-  "amount_price" "numeric(10, 2)" NOT NULL,
+  "amount_price" numeric(10, 2) NOT NULL,
   "created_at" timestamp,
   "modified_at" timestamp
 );
@@ -100,10 +110,10 @@ CREATE TABLE "order_status" (
 
 CREATE TABLE "orders" (
   "id" BIGSERIAL PRIMARY KEY,
-  "net_price" "numeric(10, 2)" NOT NULL,
-  "add_tax" "numeric(10, 2)",
-  "excise_tax" "numeric(10, 2)",
-  "gross_price" "numeric(10, 2)",
+  "net_price" numeric(10, 2) NOT NULL,
+  "add_tax" numeric(10, 2),
+  "excise_tax" numeric(10, 2),
+  "gross_price" numeric(10, 2),
   "remarks" text,
   "customer_id" int NOT NULL,
   "status" int,
@@ -167,9 +177,11 @@ COMMENT ON COLUMN "product_inventories"."running_low" IS 'less than 10';
 
 COMMENT ON COLUMN "notifications"."status" IS '1 or 2';
 
-ALTER TABLE "customers" ADD FOREIGN KEY ("type_no") REFERENCES "payment_type" ("id");
+ALTER TABLE "customers" ADD FOREIGN KEY ("type_id") REFERENCES "payment_type" ("id");
 
 ALTER TABLE "customers" ADD FOREIGN KEY ("category_id") REFERENCES "user_categories" ("id");
+
+ALTER TABLE "products" ADD FOREIGN KEY ("created_by") REFERENCES "users" ("id");
 
 ALTER TABLE "product_inventories" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");
 

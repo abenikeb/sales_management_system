@@ -74,7 +74,7 @@ export class Vendor {
 
   static save(profile: VendorType, id: number) {
     const sql = `UPDATE venders SET name = $1, address_line1 = $2, address_line2 = $3, email = $4, tel = $5,
-    password = $6 WHERE id = $7 RETURNING *`;
+                 password = $6 WHERE id = $7 RETURNING *`;
     const { name, address_line1, address_line2, email, tel, password } =
       profile;
     return pool.query(sql, [

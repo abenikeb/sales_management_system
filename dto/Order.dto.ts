@@ -16,11 +16,17 @@ import {
 export const VAT_PERCENT = 0.15;
 export const EXCISE_PERCENT = 0.1;
 
-// export class OrderInputs {
-//   trnxId: string;
-//   amount: number;
-//   items: [CartItem];
-// }
+export interface ProductItems {
+  product_id: number;
+  is_promotion: boolean;
+  quantity: number;
+}
+
+export class OrderInputs {
+  trnxId: string;
+  amount: number;
+  items: [ProductItems];
+}
 
 export enum OrderStatusState {
   PENDING = "pending",
