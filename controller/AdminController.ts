@@ -29,7 +29,7 @@ export const CreateVendor = async (
   if (vendorInputErrors.length > 0) {
     return res
       .status(400)
-      .json(_.map(vendorInputErrors, (error) => error.constraints));
+      .json(_.map(vendorInputErrors, (error: any) => error.constraints));
   }
 
   const {

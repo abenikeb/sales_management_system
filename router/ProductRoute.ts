@@ -1,17 +1,17 @@
 import express from "express";
 import {
-  // AddProduct,
-  //   GetGroceries,
-  //   GetOrdersVandor,
-  GetVendorProfile,
+  AddProduct,
+  GetProducts,
+  AddProductPrice,
+  AddProductPromotion,
   //   UpdateVendorCoverImage,
   //   UpdateVendorProfile,
-  UpdateVendorProfile,
+  //   UpdateVendorProfile,
   // UpdateVendorService,
-  VendorLogin,
+  //   VendorLogin,
   //   GetOrdersDetail,
   //   ProcessOrder,
-} from "../controller/VendorController";
+} from "../controller/ProductController";
 
 import { Authenticate } from "../middleware/CommonAuth";
 import multer from "multer";
@@ -29,16 +29,19 @@ const imageStorage = multer.diskStorage({
 
 const images = multer({ storage: imageStorage }).array("images", 10);
 
-router.post("/login", VendorLogin);
+// router.post("/login", VendorLogin);
 
 //profile section
-router.get("/profile", Authenticate, GetVendorProfile);
-router.post("/updateProfile", Authenticate, UpdateVendorProfile);
+// router.get("/profile", Authenticate, GetVendorProfile);
+// router.post("/updateProfile", Authenticate, UpdateVendorProfile);
 // router.post("/updateCover", images, UpdateVendorCoverImage);
 // router.post("/updateService", Authenticate, UpdateVendorService);
 
 // //product section
-// router.post("/product", [Authenticate, images], AddProduct);
+router.post("/add", [Authenticate, images], AddProduct);
+router.get("/get", Authenticate, GetProducts);
+router.post("/add-price", Authenticate, AddProductPrice);
+router.post("/add-promotion", Authenticate, AddProductPromotion);
 // router.get("/groceries", GetGroceries);
 
 // //order section
@@ -46,4 +49,4 @@ router.post("/updateProfile", Authenticate, UpdateVendorProfile);
 // router.put("/orders/:id/process", ProcessOrder);
 // router.get("/order/:id", GetOrdersDetail);
 
-export { router as VendorRoute };
+export { router as ProductRoute };

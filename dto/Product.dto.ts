@@ -67,18 +67,18 @@ export class CreateProductInput {
 
 export interface ProductType {
   name: string;
-  desc?: string;
+  _desc: string;
   product_image?: string;
   product_images?: [string];
   category_id: number;
   inventory_id?: number;
-  SKU_id: number;
+  product_sku: number;
   price: number;
   status?: number;
   tag_id?: number;
   tag_id2?: number;
   tag_id3?: number;
-  vender_id: number;
+  created_by: number;
   rating?: number;
   created_at: Date;
   modified_at?: Date;
