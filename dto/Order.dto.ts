@@ -25,6 +25,8 @@ export interface ProductItems {
 export class OrderInputs {
   trnxId: string;
   amount: number;
+  customer_id: number;
+  remarks: string;
   items: [ProductItems];
 }
 
@@ -64,6 +66,7 @@ export class CreateOrderType {
 }
 
 export interface OrderType {
+  orderId: number;
   netPrice: number;
   addedTax?: number;
   excise_tax?: number;

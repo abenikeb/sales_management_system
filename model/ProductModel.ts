@@ -1,5 +1,6 @@
 import pool from "../service/DataBase";
 import { ProductType } from "../dto";
+import _ from "lodash";
 
 export class Product {
   _desc: string;
@@ -37,16 +38,42 @@ export class Product {
     return pool.query(sql, [payload.email]);
   }
 
-  // static findById(payload: { id: number }) {
-  //   const sql = `SELECT * FROM products INNER JOIN product_categories ON
-  //               products.category_id = product_categories.id WHERE products.id = $1`;
-  //   return pool.query(sql, [payload.id]);
-  // }
+  static findByUserId(payload: { userId: number }) {
+    const sql = `SELECT * FROM products WHERE products.created_by = $1`;
+    return pool.query(sql, [payload.userId]);
+  }
 
   static findById(payload: { id: number }) {
     const sql = `SELECT * FROM products WHERE products.id = $1`;
     return pool.query(sql, [payload.id]);
   }
+
+  // static findInId(payload: { items: Array<any> }) {
+  //   //     const sql = `
+  //   //                 top_regions AS (
+  //   //                 SELECT products.id
+  //   //                 FROM products
+  //   //                 WHERE products.id = (SELECT $1 FROM products)
+  //   //             )
+  //   // SELECT * FROM products WHERE products.id IN ($1::int[])`;
+  //   // const sql = `for products.id in $1
+  //   //                   from products
+  //   //                   limit 10
+  //   //                 loop
+  //   //                 raise notice '% - % ', f.product_id
+  //   //                 end loop`;
+
+  //   const resultArray = [] as any;
+  //   const itemsCollection = _.map(payload.items, (item) => item);
+
+  //   return _.forEach(itemsCollection, (item) => {
+  //     const sql = `SELECT products.product_sku FROM products WHERE products.id = $1`;
+  //     return pool.query(sql, [item.product_id]);
+  //   });
+  //   // for (let idx = 0; idx <= 1; idx++) {
+  //   // }
+  //   // const result = pool.query(sql, [itemsCollection[0]]);
+  // }
 
   //   static save(profile: ProductType, id: number) {
   //     const sql = `UPDATE products SET name = $1, address_line1 = $2, tag_id = $3, email = $4, tel = $5,
@@ -69,4 +96,62 @@ export class Product {
   //     const { service_available, lat, lng } = profile;
   //     return pool.query(sql, [service_available, lat, lng, id]);
   //   }
+}
+
+export class ProductPrice {
+  product_id: string;
+  user_categories_id?: [string];
+  price: number;
+  created_at: Date;
+  modified_at?: Date;
+  constructor(ProductPriceInfo: any) {
+    this.product_id = ProductPriceInfo.product_id;
+    this.user_categories_id = ProductPriceInfo.user_categories_id;
+    this.price = ProductPriceInfo.price;
+    this.created_at = new Date();
+    this.modified_at = new Date();
+  }
+
+  create() {
+    const _sql = `INSERT INTO product_prices (product_id, price, user_categories_id, created_at, modified_at)
+                  VALUES($1, $2, $3, $4, $5) RETURNING *`;
+
+    const result = pool.query(_sql, [
+      this.product_id,
+      this.price,
+      this.user_categories_id,
+      this.created_at,
+      this.modified_at,
+    ]);
+    return result;
+  }
+}
+
+export class ProductPromotion {
+  product_id: string;
+  user_categories_id?: [string];
+  amount_price: number;
+  created_at: Date;
+  modified_at?: Date;
+  constructor(ProductPriceInfo: any) {
+    this.product_id = ProductPriceInfo.product_id;
+    this.user_categories_id = ProductPriceInfo.user_categories_id;
+    this.amount_price = ProductPriceInfo.amount_price;
+    this.created_at = new Date();
+    this.modified_at = new Date();
+  }
+
+  create() {
+    const _sql = `INSERT INTO product_promotion (product_id, amount_price, user_categories_id, created_at, modified_at)
+                  VALUES($1, $2, $3, $4, $5) RETURNING *`;
+
+    const result = pool.query(_sql, [
+      this.product_id,
+      this.amount_price,
+      this.user_categories_id,
+      this.created_at,
+      this.modified_at,
+    ]);
+    return result;
+  }
 }

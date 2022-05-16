@@ -74,3 +74,84 @@ export class User {
     ]);
   }
 }
+
+export class Customer {
+  first_name: string;
+  last_name: string;
+  category_id: number;
+  business_licenses_no: string;
+  plate_no: number;
+  type_id: number;
+  approved_by: number;
+  territory: string;
+  email: string;
+  tel: string;
+  lat: number;
+  lng: number;
+  city: string;
+  created_at?: Date;
+  modified_at?: Date;
+
+  constructor(CustomerType: any) {
+    this.first_name = CustomerType.first_name;
+    this.last_name = CustomerType.last_name;
+    this.category_id = CustomerType.category_id;
+    this.business_licenses_no = CustomerType.business_licenses_no;
+    this.plate_no = CustomerType.plate_no;
+    this.type_id = CustomerType.type_id;
+    this.approved_by = CustomerType.approved_by;
+    this.territory = CustomerType.territory;
+    this.email = CustomerType.email;
+    this.tel = CustomerType.tel;
+    this.lat = CustomerType.lat;
+    this.lng = CustomerType.lng;
+    this.city = CustomerType.city;
+    this.created_at = new Date();
+    this.modified_at = CustomerType.modified_at;
+  }
+  create() {
+    const _sql = `INSERT INTO customers (tel, first_name, last_name, category_id, email, business_licenses_no, plate_no, type_id, approved_by,
+                  territory,lat,lng, created_at, modified_at, city)
+                  VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING *`;
+
+    const result = pool.query(_sql, [
+      this.tel,
+      this.first_name,
+      this.last_name,
+      this.category_id,
+      this.email,
+      this.business_licenses_no,
+      this.plate_no,
+      this.type_id,
+      this.approved_by,
+      this.territory,
+      this.lat,
+      this.lng,
+      this.created_at,
+      this.modified_at,
+      this.city,
+    ]);
+    return result;
+  }
+
+  static findOne(payload: { tel: string }) {
+    const sql = `SELECT * FROM customers WHERE tel = $1`;
+    return pool.query(sql, [payload.tel]);
+    // return result.rows.length > 0 ? true : false;
+  }
+
+  static findById(payload: { id: number }) {
+    const sql = `SELECT * FROM users WHERE id = $1`;
+    return pool.query(sql, [payload.id]);
+  }
+
+  static save(profile: UserType) {
+    const sql = `UPDATE users SET first_name = $1, last_name = $2, email = $3 WHERE id = $4 RETURNING *`;
+    return pool.query(sql, [
+      profile.first_name,
+      profile.last_name,
+      profile.email,
+      profile.id,
+    ]);
+  }
+}

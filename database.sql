@@ -26,11 +26,16 @@ CREATE TABLE "users" (
   "user_group" int
 );
 
+
+
 CREATE TABLE "payment_type" (
   "id" BIGSERIAL PRIMARY KEY,
   "name" varchar,
   "_desc" varchar
 );
+
+INSERT INTO payment_type (name,_desc) VALUES('CASH','');
+INSERT INTO payment_type (name,_desc) VALUES('CREDIT','');
 
 CREATE TABLE "user_categories" (
   "id" BIGSERIAL PRIMARY KEY,
@@ -39,6 +44,8 @@ CREATE TABLE "user_categories" (
   "created_at" timestamp,
   "modified_at" timestamp
 );
+
+INSERT INTO user_categories(name, _desc) VALUES('AA Agent', 'has addis ababa agents');
 
 CREATE TABLE "customers" (
   "id" BIGSERIAL PRIMARY KEY,
@@ -57,6 +64,9 @@ CREATE TABLE "customers" (
   "created_at" timestamp DEFAULT (now()),
   "modified_at" timestamp DEFAULT (now())
 );
+
+ALTER TABLE customers
+  ADD approved_by int;
 
 CREATE TABLE "products" (
   "id" BIGSERIAL PRIMARY KEY,
@@ -99,6 +109,11 @@ CREATE TABLE "product_promotion" (
   "created_at" timestamp,
   "modified_at" timestamp
 );
+DELETE FROM product_promotion
+  WHERE id = 3
+  RETURNING *;
+
+ALTER TABLE product_promotion ADD CONSTRAINT uniqu_product_id UNIQUE(product_id);
 
 CREATE TABLE "order_status" (
   "id" BIGSERIAL PRIMARY KEY,
@@ -107,6 +122,8 @@ CREATE TABLE "order_status" (
   "created_at" timestamp,
   "modified_at" timestamp
 );
+
+INSERT INTO order_status (name,_desc) VALUES('Pending','the status has pending waiting for confirmed');
 
 CREATE TABLE "orders" (
   "id" BIGSERIAL PRIMARY KEY,
@@ -122,6 +139,9 @@ CREATE TABLE "orders" (
   "created_at" timestamp,
   "modified_at" timestamp
 );
+
+ALTER TABLE orders
+  ADD orderId int;
 
 CREATE TABLE "order_items" (
   "id" BIGSERIAL PRIMARY KEY,

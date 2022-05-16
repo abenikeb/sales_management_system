@@ -17,7 +17,7 @@ import {
 } from "../dto";
 import { GenerateSignature, ValidatePassword } from "../utility";
 import { FindVendor } from "../controller";
-import { Vendor, Product } from "../model";
+import { Vendor, Product, ProductPrice, ProductPromotion } from "../model";
 import { FindUser } from "./UserController";
 
 export const AddProduct = async (
@@ -61,22 +61,81 @@ export const AddProduct = async (
   res.status(200).send(result.rows[0]);
 };
 
-// export const GetProducts = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) => {
-//   const user = req.user as UserPayload;
-//   if (!user)
-//     return res
-//       .status(401)
-//       .json({ message: "Access denied. No token provided." });
+export const AddProductPrice = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const user = req.user as UserPayload;
+  if (!user)
+    return res
+      .status(401)
+      .json({ message: "Access denied. No token provided." });
 
-//   const listProduct = await Grocery.find({ vandorId: user.id });
-//   if (!listProduct) return res.json({ Message: "No Product Found!" });
+  let existUser = await FindUser(user.id);
+  if (!existUser) return res.status(400).json({ message: "Invalid User!" });
 
-//   return res.json(listProduct);
-// };
+  // const CreateProductInputs = plainToClass(CreateProductInput, req.body);
+  // const CreateProductInputsError = await validate(CreateProductInputs, {
+  //   validationError: { target: true },
+  // });
+  // if (CreateProductInputsError.length > 0)
+  //   return res.json(CreateProductInputsError);
+
+  const { product_id, user_categories_id, price } = req.body as any;
+
+  const productCreate = new ProductPrice({
+    product_id,
+    user_categories_id,
+    price,
+  } as ProductPrice);
+
+  const result = await productCreate.create();
+  res.status(200).send(result.rows[0]);
+};
+
+export const AddProductPromotion = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const user = req.user as UserPayload;
+  if (!user)
+    return res
+      .status(401)
+      .json({ message: "Access denied. No token provided." });
+
+  let existUser = await FindUser(user.id);
+  if (!existUser) return res.status(400).json({ message: "Invalid User!" });
+
+  const { product_id, user_categories_id, amount_price } = req.body as any;
+
+  const productCreate = new ProductPromotion({
+    product_id,
+    user_categories_id,
+    amount_price,
+  } as ProductPromotion);
+
+  const result = await productCreate.create();
+  res.status(200).send(result.rows[0]);
+};
+
+export const GetProducts = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const user = req.user as UserPayload;
+  if (!user)
+    return res
+      .status(401)
+      .json({ message: "Access denied. No token provided." });
+
+  const listProduct = await Product.findByUserId({ userId: user.id });
+  if (!listProduct) return res.json({ Message: "No Product Found!" });
+
+  return res.json(listProduct.rows);
+};
 
 // export const GetOrdersVandor = async (
 //   req: Request,

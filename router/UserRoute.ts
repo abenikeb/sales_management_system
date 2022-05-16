@@ -6,6 +6,7 @@ import {
   UserLogin,
   GetUserProfile,
   EditUserProfile,
+  CreateCustomer,
 } from "../controller";
 import { Authenticate } from "../middleware/CommonAuth";
 
@@ -19,5 +20,6 @@ profile
 */
 router.get("/profile", Authenticate, GetUserProfile);
 router.patch("/edit_profile", Authenticate, EditUserProfile);
+router.post("/create-customer", Authenticate, CreateCustomer);
 
 export { router as UserRoute };

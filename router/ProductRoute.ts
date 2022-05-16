@@ -1,9 +1,9 @@
 import express from "express";
 import {
   AddProduct,
-  //   GetGroceries,
-  //   GetOrdersVandor,
-  //   GetVendorProfile,
+  GetProducts,
+  AddProductPrice,
+  AddProductPromotion,
   //   UpdateVendorCoverImage,
   //   UpdateVendorProfile,
   //   UpdateVendorProfile,
@@ -39,6 +39,9 @@ const images = multer({ storage: imageStorage }).array("images", 10);
 
 // //product section
 router.post("/add", [Authenticate, images], AddProduct);
+router.get("/get", Authenticate, GetProducts);
+router.post("/add-price", Authenticate, AddProductPrice);
+router.post("/add-promotion", Authenticate, AddProductPromotion);
 // router.get("/groceries", GetGroceries);
 
 // //order section

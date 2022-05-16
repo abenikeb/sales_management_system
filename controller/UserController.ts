@@ -21,6 +21,7 @@ import {
 } from "../utility";
 import {} from "./../utility/PasswordUnility";
 import {
+  Customer,
   // Grocery,
   User,
   // Transaction,
@@ -250,4 +251,72 @@ export const EditUserProfile = async (
       "user_group",
     ])
   );
+};
+
+export const CreateCustomer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  // const vendorInput = plainToClass(CreateVendorInput, req.body);
+  // const vendorInputErrors = await validate(vendorInput, {
+  //   validationError: { target: true },
+  // });
+  // if (vendorInputErrors.length > 0) {
+  //   return res
+  //     .status(400)
+  //     .json(_.map(vendorInputErrors, (error: any) => error.constraints));
+  // }
+
+  const {
+    first_name,
+    last_name,
+    category_id,
+    business_licenses_no,
+    plate_no,
+    type_id,
+    territory,
+    email,
+    tel,
+    city,
+  } = <any>req.body;
+
+  const existVendor = await Customer.findOne({ tel: tel });
+  if (existVendor.rows.length > 0)
+    return res.status(400).json({ message: "Customer already registered." });
+
+  const vendor = await new Customer({
+    first_name,
+    last_name,
+    category_id,
+    business_licenses_no,
+    plate_no,
+    type_id,
+    territory,
+    email,
+    tel,
+    lat: 0,
+    lng: 0,
+    city,
+    modified_at: new Date(),
+  } as Customer);
+
+  const result = await vendor.create();
+  if (!result) return res.json({ message: "Error found" });
+
+  // generate signture
+  const signture = GenerateSignature({
+    id: result.rows[0].id,
+    email: result.rows[0].email,
+    name: result.rows[0].name,
+  } as UserPayload);
+
+  return res
+    .header("x-auth-token", signture)
+    .header("access-control-expose-headers", "x-auth-token")
+    .json({
+      signture: signture,
+      name: result.rows[0].name,
+      email: result.rows[0].email,
+    });
 };

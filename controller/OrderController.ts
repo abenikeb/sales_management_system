@@ -2,7 +2,7 @@
 import { Request, Response, NextFunction } from "express";
 import _ from "lodash";
 import { OrderInputs, UserPayload } from "../dto";
-import { Product, User } from "../model";
+import { CreateOrderItem, CreateOrderType, Product, User } from "../model";
 
 // export const ApplyOffer = async (
 //   req: Request,
@@ -124,75 +124,80 @@ export const CreateOrder = async (req: Request, res: Response) => {
       .json({ message: "Access denied. No token provided." });
 
   //   const { trnxId, amount, items } = <OrderInputs>req.body;
-  const { amount, items } = <OrderInputs>req.body;
-
-  //validate the transaction
-  //   const { status, currentTransaction } = (await validateTransaction(
-  //     trnxId
-  //   )) as any;
-  //   if (!status) return res.status(400).json("You Should Get valid Transaction!");
+  const { amount, items, customer_id, remarks } = <OrderInputs>req.body;
 
   let profile = await User.findById({ id: user.id });
   if (!profile) return res.status(400).json({ message: "Invalid profile!" });
 
   let orderID = `${Math.floor(Math.random() * 89999) + 1000}`;
-  let cartItems = Array();
+  let productItems = [] as Array<any>;
+  let cartItems = [] as Array<any>;
   let netAmount = 0.0;
-  let vendorId = "";
+  let created_by = "";
 
   // grab order items from request {{id:xx, unit:xx}}
 
   //calculate order amount
-  console.log("items", items);
+  // const products = await Product.findInId({ items: items });
+  const products = _.map(items, (item) => item.product_id);
+  for (let id = 0; id < products.length; id++) {
+    productItems.push(
+      await (
+        await Product.findById({ id: products[id] })
+      ).rows[0]
+    );
+  }
 
-  const products = _.forEach(items, async (item) => {
-    await Product.findById({ id: item.product_id });
+  productItems.map((product) => {
+    items.map(({ product_id, quantity }) => {
+      if (product.id == product_id) {
+        created_by = product.created_by;
+        netAmount += 10 * quantity;
+        cartItems.push({ product, quantity });
+      }
+    });
   });
 
-  return res.json({ products: products });
-  //   const groceries = await Product.findById(id)
-  //     .where("id")
-  //     .in(items.map((item) => item._id))
-  //     .exec();
-  //   groceries.map((grocery) => {
-  //     items.map(({ id, unit }) => {
-  //       if (grocery.id == id) {
-  //         vendorId = grocery.vandorId;
-  //         netAmount += grocery.price * unit;
-  //         cartItems.push({ grocery, unit });
-  //       }
-  //     });
-  //   });
-
   //create order with item description
-  //   if (cartItems) {
-  //     // create order
-  //     const currentOrder = await Order.create({
-  //       orderId: orderID,
-  //       vandorID: vendorId,
-  //       items: cartItems,
-  //       totalAmount: netAmount,
-  //       paidAmount: amount,
-  //       orderDate: new Date(),
-  //       orderStatus: "Waiting",
-  //       remarks: "",
-  //       deliveryID: "",
-  //       readyTime: 35,
-  //     });
-  //     profile.cart = [] as Array<any>;
-  //     profile.orders.push(currentOrder);
+  if (!cartItems) return false;
+  // create order
+  const currentOrder = new CreateOrderType({
+    netPrice: netAmount,
+    orderId: orderID,
+    customer_id: customer_id,
+    approved_by: profile.rows[0].id,
+    status: 1,
+    remarks: remarks,
+    payment_via: "",
+    modified_at: new Date(),
+  } as any);
 
-  //     if (!currentTransaction) return;
-  //     currentTransaction.orderId = orderID;
-  //     currentTransaction.vandorId = vendorId;
-  //     currentTransaction.status = "CONFIRMED";
+  const orderResult = await currentOrder.create();
 
-  //     await currentTransaction.save();
+  if (!orderResult) return false;
+  _.map(cartItems, async ({ product, quantity }) => {
+    const orderItem = new CreateOrderItem({
+      order_id: orderID,
+      product_id: product.id,
+      is_promotion: false,
+      quantity: quantity,
+    });
+    await orderItem.create();
+  });
 
-  //     await AssignDeliveryBoy(currentOrder.id, vendorId);
-  //     // finally update orders to user account
-  //     return res.status(200).json(await profile.save());
-  //   }
+  // profile.cart = [] as Array<any>;
+  // profile.orders.push(currentOrder);
+
+  // if (!currentTransaction) return;
+  // currentTransaction.orderId = orderID;
+  // currentTransaction.vandorId = vendorId;
+  // currentTransaction.status = "CONFIRMED";
+
+  // await currentTransaction.save();
+
+  // await AssignDeliveryBoy(currentOrder.id, vendorId);
+  // finally update orders to user account
+  return res.status(200).json({ orderResult: orderResult.rows[0] });
 };
 
 // export const GetOrders = async (
