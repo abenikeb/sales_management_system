@@ -6,6 +6,7 @@ import {
   CreateOrderItem,
   CreateOrderType,
   CreateReportItem,
+  OrderNotification,
   Product,
   ProductPrice,
   User,
@@ -205,47 +206,16 @@ export const CreateOrder = async (req: Request, res: Response) => {
 
   if (!resultCartItems) return false;
 
-  //push notifications
-  const orderNotification = _.map(
-    cartItems,
-    async ({
-      product,
-      quantity,
-      promotion,
-      user_categories_id,
-      customer_id,
-    }) => {
-      const reportItem = new CreateReportItem({
-        customer_id,
-        user_categories_id,
-        product_id: product.id,
-        promotion: promotion,
-        quantity: quantity,
-      } as CreateReportItem);
-      await reportItem.create();
-    }
-  );
-
-  //create generate report
-  const resultReport = _.map(
-    cartItems,
-    async ({
-      product,
-      quantity,
-      promotion,
-      user_categories_id,
-      customer_id,
-    }) => {
-      const reportItem = new CreateReportItem({
-        customer_id,
-        user_categories_id,
-        product_id: product.id,
-        promotion: promotion,
-        quantity: quantity,
-      } as CreateReportItem);
-      await reportItem.create();
-    }
-  );
+  // push notifications
+  const notification = new OrderNotification({
+    header: "New order has been created!",
+    message: `The order is creaed and approved by ${orderResult.rows[0].approved_by}`,
+    type: 1,
+    receiver_id: 2,
+    status: 1,
+    link_url: `api/users/orders/${orderResult.rows[0].id}`,
+  } as OrderNotification);
+  await notification.create();
 
   // profile.cart = [] as Array<any>;
   // profile.orders.push(currentOrder);
@@ -260,6 +230,76 @@ export const CreateOrder = async (req: Request, res: Response) => {
   // await AssignDeliveryBoy(currentOrder.id, vendorId);
   // finally update orders to user account
   return res.status(200).json({ orderResult: orderResult.rows[0] });
+};
+
+export const changeOrderStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  let user = req.user;
+  if (!user)
+    return res
+      .status(401)
+      .json({ message: "Access denied. No token provided." });
+
+  let profile = await User.findById({ id: user.id });
+  if (!profile) return res.status(400).json({ message: "Invalid profile!" });
+
+  const { status } = req.body;
+
+  if (status == 2) {
+    const result = await CreateOrderType.save(status);
+    if (!result) return false;
+    // push notifications
+    const notification = new OrderNotification({
+      header: "The order status changed!",
+      message: `The order is creaed and approved by`,
+      type: 1,
+      receiver_id: 2,
+      status: 1,
+      link_url: `api/users/orders/${result.rows[0].id}`,
+    } as OrderNotification);
+    await notification.create();
+  } else if (status == 3) {
+    const result = await CreateOrderType.save(status);
+    if (!result) return false;
+
+    const orderItems = await CreateOrderItem.findByOrderId({
+      id: result.rows[0].id,
+    });
+
+    // create generate report
+    // const resultReport = _.map(
+    //   cartItems,
+    //   async ({
+    //     product,
+    //     quantity,
+    //     promotion,
+    //     user_categories_id,
+    //     customer_id,
+    //   }) => {
+    //     const reportItem = new CreateReportItem({
+    //       customer_id,
+    //       user_categories_id,
+    //       product_id: product.id,
+    //       promotion: promotion,
+    //       quantity: quantity,
+    //     } as CreateReportItem);
+    //     await reportItem.create();
+    //   }
+    // );
+
+    // const notification = new OrderNotification({
+    //   header: "The order status changed!",
+    //   message: `The order is creaed and approved by`,
+    //   type: 1,
+    //   receiver_id: 2,
+    //   status: 1,
+    //   link_url: `api/users/orders/${result.rows[0].id}`,
+    // } as OrderNotification);
+    // await notification.create();
+  }
 };
 
 // export const GetOrders = async (

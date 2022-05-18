@@ -54,6 +54,11 @@ export class CreateOrderType {
     ]);
     return result;
   }
+
+  static save(profile: OrderType) {
+    const sql = `UPDATE orders SET status = $1 RETURNING *`;
+    return pool.query(sql, [profile.status]);
+  }
 }
 
 export class CreateOrderItem {
@@ -80,6 +85,11 @@ export class CreateOrderItem {
       this.quantity,
     ]);
     return result;
+  }
+
+  static findByOrderId(payload: { id: number }) {
+    const sql = `SELECT * FROM order_items WHERE order_items.order_id = $1`;
+    return pool.query(sql, [payload.id]);
   }
 }
 
@@ -118,24 +128,41 @@ export class CreateReportItem {
 
 export class OrderNotification {
   message: string;
-  isRead?: boolean;
+  header: string;
+  isRead: boolean;
   type?: Readonly<number>;
   receiver_id: number;
   status?: number;
+  link_url: string;
   created_at: Date = new Date();
   modified_at?: Date;
 
   constructor(orderNotification: OrderNotification) {
     this.message = orderNotification.message;
-    this.isRead = orderNotification.isRead;
+    this.header = orderNotification.header;
+    this.isRead = false;
     this.type = orderNotification.type;
     this.receiver_id = orderNotification.receiver_id;
-    this.status = 1;
-    this.content = orderNotification.message;
-    this.receiverType = orderNotification.receiverType;
-    this.dateTime = new Date();
+    this.link_url = orderNotification.link_url;
+    this.status = orderNotification.status || 1;
+    this.modified_at = new Date();
+  }
+  create() {
+    const _sql = `INSERT INTO notifications (message, header, type, receiver_id, status, created_at, link_url, modified_at)
+                  VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`;
 
-    this.isRead = orderNotification.isRead || false;
+    const result = pool.query(_sql, [
+      this.message,
+      this.header,
+      // this.isRead,
+      this.type,
+      this.receiver_id,
+      this.status,
+      this.created_at,
+      this.link_url,
+      this.modified_at,
+    ]);
+    return result;
   }
 }
 
