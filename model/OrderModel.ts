@@ -59,56 +59,85 @@ export class CreateOrderType {
 export class CreateOrderItem {
   order_id: number;
   product_id: number;
-  is_promotion: boolean;
+  promotion: boolean;
   quantity?: number;
 
   constructor(order: any) {
     this.order_id = order.order_id;
     this.product_id = order.product_id;
-    this.is_promotion = order.is_promotion;
+    this.promotion = order.promotion;
     this.quantity = order.quantity || 1;
   }
 
   create() {
-    const _sql = `INSERT INTO order_items (order_id, product_id, is_promotion, quantity)
+    const _sql = `INSERT INTO order_items (order_id, product_id, promotion, quantity)
                   VALUES($1, $2, $3, $4) RETURNING *`;
 
     const result = pool.query(_sql, [
       this.order_id,
       this.product_id,
-      this.is_promotion,
+      this.promotion,
       this.quantity,
     ]);
     return result;
   }
 }
 
-// export class OrderNotification {
-//   id?: string;
-//   orderId: string;
-//   userId: string;
-//   message: string;
-//   isRead?: boolean;
-//   type?: Readonly<string> = ORDER_NOTIFICATION_COLLECTION;
-//   receiverId?: string;
-//   status?: number;
-//   content?: string;
-//   receiverType: OrderReceiverType;
-//   dateTime?: firebase.firestore.Timestamp;
+export class CreateReportItem {
+  customer_id: number;
+  user_categories_id: number;
+  product_id: number;
+  promotion: boolean;
+  quantity: number;
+  created_at: Date;
 
-//   constructor(orderNotification: OrderNotification) {
-//     this.orderId = orderNotification.orderId;
-//     this.userId = orderNotification.userId;
-//     this.message = orderNotification.message;
-//     this.receiverId = orderNotification.userId;
-//     this.status = 1;
-//     this.content = orderNotification.message;
-//     this.receiverType = orderNotification.receiverType;
-//     this.dateTime = new Date();
+  constructor(order: any) {
+    this.customer_id = order.customer_id;
+    this.user_categories_id = order.user_categories_id;
+    this.product_id = order.product_id;
+    this.promotion = order.promotion;
+    this.quantity = order.quantity || 1;
+    this.created_at = new Date();
+  }
 
-//     this.isRead = orderNotification.isRead || false;
-//   }
-// }
+  create() {
+    const _sql = `INSERT INTO report (customer_id,user_categories_id, product_id, promotion, quantity, created_at)
+                  VALUES($1, $2, $3, $4, $5, $6) RETURNING *`;
+
+    const result = pool.query(_sql, [
+      this.customer_id,
+      this.user_categories_id,
+      this.product_id,
+      this.promotion,
+      this.quantity,
+      this.created_at,
+    ]);
+    return result;
+  }
+}
+
+export class OrderNotification {
+  message: string;
+  isRead?: boolean;
+  type?: Readonly<number>;
+  receiver_id: number;
+  status?: number;
+  created_at: Date = new Date();
+  modified_at?: Date;
+
+  constructor(orderNotification: OrderNotification) {
+    this.message = orderNotification.message;
+    this.isRead = orderNotification.isRead;
+    this.type = orderNotification.type;
+    this.receiver_id = orderNotification.receiver_id;
+    this.status = 1;
+    this.content = orderNotification.message;
+    this.receiverType = orderNotification.receiverType;
+    this.dateTime = new Date();
+
+    this.isRead = orderNotification.isRead || false;
+  }
+}
 
 // Helpers
 export const GenerateOrderPrice = (netPrice: number): OrderPrice => {

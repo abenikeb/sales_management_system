@@ -2,7 +2,14 @@
 import { Request, Response, NextFunction } from "express";
 import _ from "lodash";
 import { OrderInputs, UserPayload } from "../dto";
-import { CreateOrderItem, CreateOrderType, Product, User } from "../model";
+import {
+  CreateOrderItem,
+  CreateOrderType,
+  CreateReportItem,
+  Product,
+  ProductPrice,
+  User,
+} from "../model";
 
 // export const ApplyOffer = async (
 //   req: Request,
@@ -123,8 +130,9 @@ export const CreateOrder = async (req: Request, res: Response) => {
       .status(401)
       .json({ message: "Access denied. No token provided." });
 
-  //   const { trnxId, amount, items } = <OrderInputs>req.body;
-  const { amount, items, customer_id, remarks } = <OrderInputs>req.body;
+  const { amount, items, customer_id, remarks, user_categories_id } = <
+    OrderInputs
+  >req.body;
 
   let profile = await User.findById({ id: user.id });
   if (!profile) return res.status(400).json({ message: "Invalid profile!" });
@@ -133,12 +141,10 @@ export const CreateOrder = async (req: Request, res: Response) => {
   let productItems = [] as Array<any>;
   let cartItems = [] as Array<any>;
   let netAmount = 0.0;
-  let created_by = "";
 
   // grab order items from request {{id:xx, unit:xx}}
 
   //calculate order amount
-  // const products = await Product.findInId({ items: items });
   const products = _.map(items, (item) => item.product_id);
   for (let id = 0; id < products.length; id++) {
     productItems.push(
@@ -148,15 +154,23 @@ export const CreateOrder = async (req: Request, res: Response) => {
     );
   }
 
-  productItems.map((product) => {
-    items.map(({ product_id, quantity }) => {
-      if (product.id == product_id) {
-        created_by = product.created_by;
-        netAmount += 10 * quantity;
-        cartItems.push({ product, quantity });
-      }
+  if (productItems) {
+    productItems.map((product) => {
+      items.map(async ({ product_id, quantity, promotion }) => {
+        if (product?.id == product_id) {
+          netAmount += product?.price * quantity;
+          //promotion
+          cartItems.push({
+            product,
+            quantity,
+            promotion,
+            customer_id,
+            user_categories_id,
+          });
+        }
+      });
     });
-  });
+  }
 
   //create order with item description
   if (!cartItems) return false;
@@ -175,15 +189,63 @@ export const CreateOrder = async (req: Request, res: Response) => {
   const orderResult = await currentOrder.create();
 
   if (!orderResult) return false;
-  _.map(cartItems, async ({ product, quantity }) => {
-    const orderItem = new CreateOrderItem({
-      order_id: orderID,
-      product_id: product.id,
-      is_promotion: false,
-      quantity: quantity,
-    });
-    await orderItem.create();
-  });
+
+  const resultCartItems = _.map(
+    cartItems,
+    async ({ product, quantity, promotion }) => {
+      const orderItem = new CreateOrderItem({
+        order_id: orderResult.rows[0].id,
+        product_id: product.id,
+        promotion: promotion,
+        quantity: quantity,
+      });
+      await orderItem.create();
+    }
+  );
+
+  if (!resultCartItems) return false;
+
+  //push notifications
+  const orderNotification = _.map(
+    cartItems,
+    async ({
+      product,
+      quantity,
+      promotion,
+      user_categories_id,
+      customer_id,
+    }) => {
+      const reportItem = new CreateReportItem({
+        customer_id,
+        user_categories_id,
+        product_id: product.id,
+        promotion: promotion,
+        quantity: quantity,
+      } as CreateReportItem);
+      await reportItem.create();
+    }
+  );
+
+  //create generate report
+  const resultReport = _.map(
+    cartItems,
+    async ({
+      product,
+      quantity,
+      promotion,
+      user_categories_id,
+      customer_id,
+    }) => {
+      const reportItem = new CreateReportItem({
+        customer_id,
+        user_categories_id,
+        product_id: product.id,
+        promotion: promotion,
+        quantity: quantity,
+      } as CreateReportItem);
+      await reportItem.create();
+    }
+  );
 
   // profile.cart = [] as Array<any>;
   // profile.orders.push(currentOrder);
@@ -316,3 +378,11 @@ export const CreateOrder = async (req: Request, res: Response) => {
 //   await profile.save();
 //   res.json(profile);
 // };
+
+//helper
+const price = async (id: any) => {
+  const product_price = await ProductPrice.findById({ id });
+  const price = product_price.rows[0]?.price;
+  if (!price) return false;
+  return price;
+};

@@ -155,7 +155,7 @@ CREATE TABLE "report" (
   "id" BIGSERIAL PRIMARY KEY,
   "customer_id" int,
   "product_id" int,
-  "user_categories_id" int,
+  "user_categories_id" int, 
   "quantity" int,
   "amount" numeric(10,2),
   "created_at" timestamp DEFAULT (now())

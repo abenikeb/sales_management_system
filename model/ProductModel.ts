@@ -44,7 +44,8 @@ export class Product {
   }
 
   static findById(payload: { id: number }) {
-    const sql = `SELECT * FROM products WHERE products.id = $1`;
+    const sql = `SELECT products.id, products.product_sku, products._desc, products.created_by, product_prices.price
+                 FROM products INNER JOIN product_prices ON products.id = product_prices.product_id WHERE products.id = $1`;
     return pool.query(sql, [payload.id]);
   }
 
@@ -124,6 +125,10 @@ export class ProductPrice {
       this.modified_at,
     ]);
     return result;
+  }
+  static findById(payload: { id: number }) {
+    const sql = `SELECT * FROM product_prices WHERE product_prices.product_id = $1`;
+    return pool.query(sql, [payload.id]);
   }
 }
 
