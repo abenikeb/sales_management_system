@@ -6,6 +6,7 @@ import {
   CreateOrderItem,
   CreateOrderType,
   CreateReportItem,
+  Customer,
   OrderNotification,
   Product,
   ProductPrice,
@@ -213,7 +214,7 @@ export const CreateOrder = async (req: Request, res: Response) => {
     type: 1,
     receiver_id: 2,
     status: 1,
-    link_url: `api/users/orders/${orderResult.rows[0].id}`,
+    link_url: `api/users/orders/?id=${orderResult.rows[0].id}`,
   } as OrderNotification);
   await notification.create();
 
@@ -232,7 +233,7 @@ export const CreateOrder = async (req: Request, res: Response) => {
   return res.status(200).json({ orderResult: orderResult.rows[0] });
 };
 
-export const changeOrderStatus = async (
+export const approveOrderStatus = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -246,11 +247,11 @@ export const changeOrderStatus = async (
   let profile = await User.findById({ id: user.id });
   if (!profile) return res.status(400).json({ message: "Invalid profile!" });
 
-  const { status } = req.body;
+  const { orderId, status } = req.body;
 
   if (status == 2) {
-    const result = await CreateOrderType.save(status);
-    if (!result) return false;
+    const result = await CreateOrderType.save({ id: orderId, status });
+    if (!result.rows[0]) return false;
     // push notifications
     const notification = new OrderNotification({
       header: "The order status changed!",
@@ -258,37 +259,37 @@ export const changeOrderStatus = async (
       type: 1,
       receiver_id: 2,
       status: 1,
-      link_url: `api/users/orders/${result.rows[0].id}`,
+      link_url: `api/users/orders/?id=${result.rows[0].id}`,
     } as OrderNotification);
     await notification.create();
   } else if (status == 3) {
-    const result = await CreateOrderType.save(status);
-    if (!result) return false;
+    const result = await CreateOrderType.save({ id: orderId, status });
+    if (!result.rows[0]) return false;
 
     const orderItems = await CreateOrderItem.findByOrderId({
-      id: result.rows[0].id,
+      id: orderId,
     });
 
+    console.log("orderItems", orderItems.rows);
+
     // create generate report
-    // const resultReport = _.map(
-    //   cartItems,
-    //   async ({
-    //     product,
-    //     quantity,
-    //     promotion,
-    //     user_categories_id,
-    //     customer_id,
-    //   }) => {
-    //     const reportItem = new CreateReportItem({
-    //       customer_id,
-    //       user_categories_id,
-    //       product_id: product.id,
-    //       promotion: promotion,
-    //       quantity: quantity,
-    //     } as CreateReportItem);
-    //     await reportItem.create();
-    //   }
-    // );
+    const resultReport = _.map(
+      orderItems.rows,
+      async ({ customer_id, order_id, product_id, quantity, promotion }) => {
+        const reportItem = new CreateReportItem({
+          customer_id,
+          user_categories_id: await (
+            await Customer.findUsersCategory({
+              categoryId: customer_id,
+            })
+          ).rows[0],
+          product_id,
+          promotion,
+          quantity,
+        } as CreateReportItem);
+        await reportItem.create();
+      }
+    );
 
     // const notification = new OrderNotification({
     //   header: "The order status changed!",

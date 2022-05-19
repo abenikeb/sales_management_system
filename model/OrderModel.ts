@@ -55,9 +55,11 @@ export class CreateOrderType {
     return result;
   }
 
-  static save(profile: OrderType) {
-    const sql = `UPDATE orders SET status = $1 RETURNING *`;
-    return pool.query(sql, [profile.status]);
+  static save(payload: { id: number; status: OrderType }) {
+    console.log({ id: payload.id, status: payload.status });
+
+    const sql = `UPDATE orders SET status = $1 WHERE id = $2 RETURNING *`;
+    return pool.query(sql, [payload.status, payload.id]);
   }
 }
 
@@ -88,7 +90,7 @@ export class CreateOrderItem {
   }
 
   static findByOrderId(payload: { id: number }) {
-    const sql = `SELECT * FROM order_items WHERE order_items.order_id = $1`;
+    const sql = `SELECT * FROM order_items INNER JOIN orders on order_items.order_id = orders.id WHERE order_id = $1`;
     return pool.query(sql, [payload.id]);
   }
 }

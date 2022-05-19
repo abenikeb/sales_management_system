@@ -145,6 +145,11 @@ export class Customer {
     return pool.query(sql, [payload.id]);
   }
 
+  static findUsersCategory(payload: { categoryId: number }) {
+    const sql = `SELECT * FROM customers WHERE category_id = $1`;
+    return pool.query(sql, [payload.categoryId]);
+  }
+
   static save(profile: UserType) {
     const sql = `UPDATE users SET first_name = $1, last_name = $2, email = $3 WHERE id = $4 RETURNING *`;
     return pool.query(sql, [
