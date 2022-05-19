@@ -109,6 +109,7 @@ CREATE TABLE "product_promotion" (
   "created_at" timestamp,
   "modified_at" timestamp
 );
+
 DELETE FROM product_promotion
   WHERE id = 3
   RETURNING *;
