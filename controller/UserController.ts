@@ -1,7 +1,6 @@
-import { plainToClass } from "class-transformer";
 import { Request, Response, NextFunction } from "express";
+import { plainToClass } from "class-transformer";
 import { validate } from "class-validator";
-
 import _ from "lodash";
 
 import {
@@ -10,8 +9,8 @@ import {
   CreateUserLogin,
   EditProfile,
   UserType,
-  CreateVendorInput,
   CreateCustomerInput,
+  EditCustomerProfile,
 } from "../dto";
 import {
   GenerateOtp,
@@ -21,11 +20,10 @@ import {
   GenerateSalt,
   onRequestOtp,
 } from "../utility";
-import {} from "./../utility/PasswordUnility";
-import { Customer, User } from "../model";
+import { Customer, User, UserCategory } from "../model";
 
 /*
- * User section
+ * USER SECTION
  */
 
 export const FindUser = (id: number, tel?: string) => {
@@ -251,7 +249,7 @@ export const EditUserProfile = async (
 };
 
 /*
- * Customer section
+ * CUSTOMER SECTION
  */
 
 export const CreateCustomer = async (
@@ -265,14 +263,14 @@ export const CreateCustomer = async (
       .status(401)
       .json({ message: "Access denied. No token provided." });
 
-  const vendorInput = plainToClass(CreateCustomerInput, req.body);
-  const vendorInputErrors = await validate(vendorInput, {
+  const customerInput = plainToClass(CreateCustomerInput, req.body);
+  const customerInputErrors = await validate(customerInput, {
     validationError: { target: true },
   });
-  if (vendorInputErrors.length > 0) {
+  if (customerInputErrors.length > 0) {
     return res
       .status(400)
-      .json(_.map(vendorInputErrors, (error: any) => error.constraints));
+      .json(_.map(customerInputErrors, (error: any) => error.constraints));
   }
 
   const {
@@ -286,7 +284,7 @@ export const CreateCustomer = async (
     email,
     tel,
     city,
-  } = vendorInput;
+  } = customerInput;
 
   const existCustomer = await Customer.findOne({ tel: tel });
   if (existCustomer.rows.length > 0)
@@ -348,4 +346,144 @@ export const GetCustomerByID = async (
   const customer = await Customer.findById({ id: req.params.id });
   if (customer != null) return res.status(200).json(customer.rows[0]);
   return res.status(404).json({ Message: "With this id, there is no vendor." });
+};
+
+export const GetCustomerBySearch = async (req: Request, res: Response) => {
+  const user = req.user as UserPayload;
+  if (!user)
+    return res
+      .status(401)
+      .json({ message: "Access denied. No token provided." });
+
+  const { searchValue } = req.body;
+
+  const result = await Customer.findBySearch({ searchKey: searchValue });
+  res.send(result.rows);
+};
+
+export const UpdateCustomerProfile = async (req: Request, res: Response) => {
+  const user = req.user as UserPayload;
+  if (!user)
+    return res
+      .status(401)
+      .json({ message: "Access denied. No token provided." });
+
+  const customerInput = plainToClass(EditCustomerProfile, req.body);
+  const customerInputErrors = await validate(customerInput, {
+    validationError: { target: true },
+  });
+  if (customerInputErrors.length > 0) {
+    return res
+      .status(400)
+      .json(_.map(customerInputErrors, (error: any) => error.constraints));
+  }
+
+  const customerId = req.query.customerId as any;
+
+  let customer = (await Customer.findById({ id: customerId })) as any;
+  console.log({ customer: customer });
+
+  if (!customer.rows[0])
+    return res
+      .status(404)
+      .send("The customer with the given Id doesnot exist!");
+
+  const { first_name, last_name, email } = customerInput;
+
+  customer.first_name = first_name;
+  customer.last_name = last_name;
+  customer.email = email;
+
+  const result = await Customer.save({
+    profile: customer,
+    id: customerId,
+  });
+
+  if (!result.rows[0])
+    return res
+      .status(404)
+      .send("The customer with the given Id doesnot exist!");
+
+  res.send(result.rows[0]);
+};
+
+export const DeleteCustomer = async (req: Request, res: Response) => {
+  const customerId = req.query.customerId as any;
+
+  const result = await Customer.findByIdAndRemove({
+    id: customerId,
+  });
+
+  if (!result.rows[0])
+    return res
+      .status(404)
+      .send("The customer with the given Id doesnot exist!");
+
+  res.send(result.rows[0]);
+};
+
+/*
+ * USER_CATEGORY SECTION
+ */
+
+export const CreateUserCategory = async (req: Request, res: Response) => {
+  const { name, _desc } = req.body;
+
+  const userCategory = new UserCategory({
+    name,
+    _desc,
+    modified_at: new Date(),
+  } as UserCategory);
+
+  const result = await userCategory.Create();
+  if (!result.rows[0]) return res.json({ message: "Error found" });
+
+  return res.json({
+    result: result.rows[0],
+  });
+};
+
+export const GetUserCategories = async (req: Request, res: Response) => {
+  const result = await UserCategory.find();
+  if (!result.rows[0]) return res.json({ message: "Error found" });
+
+  return res.json({
+    result: result.rows,
+  });
+};
+
+export const GetUserCategoryById = async (req: Request, res: Response) => {
+  const result = await UserCategory.findById({ id: req.params.id });
+  if (!result.rows[0]) return res.json({ message: "Error found" });
+
+  return res.json({
+    result: result.rows[0],
+  });
+};
+
+export const GetCustomersByUserCategory = async (
+  req: Request,
+  res: Response
+) => {
+  const categoryId = req.query.id as any;
+
+  const result = await UserCategory.findCustomer({ id: categoryId });
+
+  if (!result.rows) return res.json({ message: "Error found" });
+
+  return res.json({
+    result: result.rows,
+  });
+};
+
+export const UpdateUserCategory = async (req: Request, res: Response) => {
+  const categoryId = req.query.id as any;
+
+  const result = await UserCategory.save({ info: categoryId, id: categoryId });
+
+  if (!result.rows) return res.json({ message: "Error found" });
+
+  return res.json({
+    result: result.rows,
+  });
 };

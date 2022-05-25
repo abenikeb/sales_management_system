@@ -9,23 +9,52 @@ import {
   CreateCustomer,
   GetCustomers,
   GetCustomerByID,
+  GetCustomerBySearch,
+  UpdateCustomerProfile,
+  DeleteCustomer,
+  CreateUserCategory,
+  GetUserCategories,
+  GetCustomersByUserCategory,
+  GetUserCategoryById,
 } from "../controller";
-import { Authenticate } from "../middleware/CommonAuth";
+import { AdminAuth, Authenticate } from "../middleware";
 
-// Signup User
+/*
+AUTH SECTION
+*/
 router.post("/signup", UserSignUp);
-// Login User
 router.post("/login", UserLogin);
 
 /*
-profile
+PROFILE SECTION
 */
 router.get("/profile", Authenticate, GetUserProfile);
 router.patch("/edit_profile", Authenticate, EditUserProfile);
 
-//customer
+/*
+CUSTOMERS SECTION
+*/
 router.post("/create-customer", Authenticate, CreateCustomer);
 router.get("/get-customers", Authenticate, GetCustomers);
 router.get("/get-customers-by-id/:id", Authenticate, GetCustomerByID);
+router.get("/get-customers-by-search", Authenticate, GetCustomerBySearch);
+router.patch(
+  "/update-customer-profile?:customerId",
+  Authenticate,
+  UpdateCustomerProfile
+);
+router.delete("/remove-customer", [Authenticate, AdminAuth], DeleteCustomer);
+
+/*
+USER CAEGORY SECTION
+*/
+router.post("/create-user-category", Authenticate, CreateUserCategory);
+router.get("/get-user-categories", Authenticate, GetUserCategories);
+router.get("/get-user-category-by-id/:id", Authenticate, GetUserCategoryById);
+router.get(
+  "/get-customers-by-category-id?:id",
+  Authenticate,
+  GetCustomersByUserCategory
+);
 
 export { router as UserRoute };

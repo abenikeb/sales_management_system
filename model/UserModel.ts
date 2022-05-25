@@ -141,7 +141,6 @@ export class Customer {
   static findOne(payload: { tel: string }) {
     const sql = `SELECT * FROM customers WHERE tel = $1`;
     return pool.query(sql, [payload.tel]);
-    // return result.rows.length > 0 ? true : false;
   }
 
   static findById(payload: { id: number | string }) {
@@ -154,13 +153,78 @@ export class Customer {
     return pool.query(sql, [payload.customerId]);
   }
 
-  static save(profile: UserType) {
+  static findBySearch(payload: { searchKey: number | string | undefined }) {
+    const sql = `SELECT * FROM customers WHERE
+                 first_name ILIKE '%${payload.searchKey}%' or
+                 last_name ILIKE '%${payload.searchKey}%' or
+                 email ILIKE '%${payload.searchKey}%' or
+                 tel ILIKE '%${payload.searchKey}%'
+                 ORDER BY id DESC`;
+
+    return pool.query(sql);
+  }
+
+  static save(payload: { profile: any; id: number }) {
     const sql = `UPDATE customers SET first_name = $1, last_name = $2, email = $3 WHERE id = $4 RETURNING *`;
-    return pool.query(sql, [
-      profile.first_name,
-      profile.last_name,
-      profile.email,
-      profile.id,
+    const { first_name, last_name, email } = payload.profile;
+    return pool.query(sql, [first_name, last_name, email, payload.id]);
+  }
+
+  static findByIdAndRemove(payload: { id: number }) {
+    const sql = `DELETE FROM customers WHERE id = $1 RETURNING *`;
+    return pool.query(sql, [payload.id]);
+  }
+}
+
+export class UserCategory {
+  name: string;
+  _desc?: string;
+  created_at?: Date;
+  modified_at?: Date;
+  constructor(UserCategoryData: any) {
+    // super(UserCategoryData);
+    this.name = UserCategoryData.name;
+    this._desc = UserCategoryData._desc;
+    this.created_at = new Date();
+    this.modified_at = UserCategoryData.modified_at;
+  }
+
+  Create() {
+    const _sql = `INSERT INTO user_categories (name, _desc, created_at, modified_at)
+                  VALUES($1, $2, $3, $4) 
+                  RETURNING *`;
+    return pool.query(_sql, [
+      this.name,
+      this._desc,
+      this.created_at,
+      this.modified_at,
     ]);
+  }
+
+  static find() {
+    const sql = `SELECT * FROM user_categories`;
+    return pool.query(sql);
+  }
+
+  static findById(payload: { id: number | string }) {
+    const sql = `SELECT * FROM user_categories WHERE id = $1`;
+    return pool.query(sql, [payload.id]);
+  }
+
+  static findCustomer(payload: { id: number }) {
+    const sql = `SELECT * FROM user_categories as U INNER JOIN customers as C ON
+                 U.id = C.category_id WHERE U.id = $1`;
+    return pool.query(sql, [payload.id]);
+  }
+
+  static save(payload: { info: any; id: number }) {
+    const sql = `UPDATE user_categories SET name = $1, _desc = $2, modified_at = $3 WHERE id = $4 RETURNING *`;
+    const { name, _desc, modified_at } = payload.info;
+    return pool.query(sql, [name, _desc, modified_at, payload.id]);
+  }
+
+  static findByIdAndRemove(payload: { id: number }) {
+    const sql = `DELETE FROM user_categories WHERE id = $1 RETURNING *`;
+    return pool.query(sql, [payload.id]);
   }
 }

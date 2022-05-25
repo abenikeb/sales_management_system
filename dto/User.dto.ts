@@ -128,3 +128,16 @@ export class CreateCustomerInput {
   // @IsDate()
   // modified_at?: Date = new Date();
 }
+
+export class EditCustomerProfile {
+  @IsString()
+  @Length(5, 50)
+  first_name: string;
+
+  @IsString()
+  @Length(2, 50)
+  last_name: string;
+
+  @IsEmail()
+  email: string;
+}
