@@ -77,3 +77,54 @@ export interface UserPayload {
   verified?: boolean;
   user_group: number;
 }
+
+export class CreateCustomerInput {
+  @IsNotEmpty()
+  @IsString()
+  @Length(3, 250)
+  first_name: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @Length(3, 250)
+  last_name: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsNotEmpty()
+  @IsInt()
+  @Min(1)
+  category_id: Number;
+
+  @IsNotEmpty()
+  @Length(5, 20)
+  tel: string;
+
+  @Length(5, 250)
+  @IsNotEmpty()
+  business_licenses_no?: string;
+
+  @Length(5, 250)
+  plate_no: string;
+
+  @Length(3, 50)
+  territory: string;
+
+  @Length(3, 50)
+  city: string;
+
+  @IsInt()
+  type_id: number;
+
+  // @IsInt()
+  // @Min(0)
+  // @Max(10)
+  // rating?: number;
+
+  // @IsDate()
+  // created_at?: Date;
+
+  // @IsDate()
+  // modified_at?: Date = new Date();
+}

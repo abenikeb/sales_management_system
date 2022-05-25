@@ -125,16 +125,15 @@ import {
 //order Section
 
 export const CreateOrder = async (req: Request, res: Response) => {
-  // grab current login Customer
   const user = req.user as UserPayload;
   if (!user)
     return res
       .status(401)
       .json({ message: "Access denied. No token provided." });
 
-  const { amount, items, customer_id, remarks, user_categories_id } = <
-    OrderInputs
-  >req.body;
+  const { items, customer_id, remarks, user_categories_id } = <OrderInputs>(
+    req.body
+  );
 
   let profile = await User.findById({ id: user.id });
   if (!profile) return res.status(400).json({ message: "Invalid profile!" });
@@ -143,8 +142,6 @@ export const CreateOrder = async (req: Request, res: Response) => {
   let productItems = [] as Array<any>;
   let cartItems = [] as Array<any>;
   let netAmount = 0.0;
-
-  // grab order items from request {{id:xx, unit:xx}}
 
   //calculate order amount
   const products = _.map(items, (item) => item.product_id);
@@ -210,7 +207,7 @@ export const CreateOrder = async (req: Request, res: Response) => {
   // push notifications
   const notification = new OrderNotification({
     header: "New order has been created!",
-    message: `The order is creaed and approved by ${orderResult.rows[0].approved_by}`,
+    message: `The order is created and approved by ${orderResult.rows[0].approved_by}`,
     type: 1,
     receiver_id: 2,
     status: 1,
@@ -252,7 +249,8 @@ export const approveOrderStatus = async (
   if (status == 2) {
     const result = await CreateOrderType.save({ id: orderId, status });
     if (!result.rows[0]) return false;
-    // push notifications
+
+    // push notifications to sales oficer
     const notification = new OrderNotification({
       header: "The order status changed!",
       message: `The order is creaed and approved by`,
@@ -270,19 +268,17 @@ export const approveOrderStatus = async (
       id: orderId,
     });
 
-    console.log("orderItems", orderItems.rows);
-
-    // create generate report
-    const resultReport = _.map(
+    // generate report
+    _.map(
       orderItems.rows,
-      async ({ customer_id, order_id, product_id, quantity, promotion }) => {
+      async ({ customer_id, product_id, quantity, promotion }) => {
         const reportItem = new CreateReportItem({
           customer_id,
           user_categories_id: await (
             await Customer.findUsersCategory({
-              categoryId: customer_id,
+              customerId: Number(customer_id),
             })
-          ).rows[0],
+          ).rows[0].category_id,
           product_id,
           promotion,
           quantity,
@@ -291,15 +287,16 @@ export const approveOrderStatus = async (
       }
     );
 
-    // const notification = new OrderNotification({
-    //   header: "The order status changed!",
-    //   message: `The order is creaed and approved by`,
-    //   type: 1,
-    //   receiver_id: 2,
-    //   status: 1,
-    //   link_url: `api/users/orders/${result.rows[0].id}`,
-    // } as OrderNotification);
-    // await notification.create();
+    // push notification after generating a report to admin/super admin
+    const notification = new OrderNotification({
+      header: "The status of your order has been updated!",
+      message: `The order has been updated in the sales report.`,
+      type: 1,
+      receiver_id: 2,
+      status: 1,
+      link_url: `api/users/orders/?=${result.rows[0].id}`,
+    } as OrderNotification);
+    await notification.create();
   }
 };
 
@@ -382,24 +379,6 @@ export const approveOrderStatus = async (
 //   return res.json(profile);
 // };
 
-// export const GetCarts = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) => {
-//   const user = <UserPayload>req.user;
-
-//   if (!user)
-//     return res
-//       .status(401)
-//       .json({ message: "Access denied. No token provided." });
-
-//   const profile = await User.findById(user.id).populate("cart.product");
-//   if (!profile) return;
-
-//   return res.json(profile.cart);
-// };
-
 // export const DeleteCart = async (
 //   req: Request,
 //   res: Response,
@@ -420,7 +399,9 @@ export const approveOrderStatus = async (
 //   res.json(profile);
 // };
 
-//helper
+/*
+ * Helper functions
+ */
 const price = async (id: any) => {
   const product_price = await ProductPrice.findById({ id });
   const price = product_price.rows[0]?.price;

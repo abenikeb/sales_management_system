@@ -91,7 +91,6 @@ export class Customer {
   city: string;
   created_at?: Date;
   modified_at?: Date;
-
   constructor(CustomerType: any) {
     this.first_name = CustomerType.first_name;
     this.last_name = CustomerType.last_name;
@@ -134,24 +133,29 @@ export class Customer {
     return result;
   }
 
+  static find() {
+    const sql = `SELECT * FROM customers`;
+    return pool.query(sql);
+  }
+
   static findOne(payload: { tel: string }) {
     const sql = `SELECT * FROM customers WHERE tel = $1`;
     return pool.query(sql, [payload.tel]);
     // return result.rows.length > 0 ? true : false;
   }
 
-  static findById(payload: { id: number }) {
-    const sql = `SELECT * FROM users WHERE id = $1`;
+  static findById(payload: { id: number | string }) {
+    const sql = `SELECT * FROM customers WHERE id = $1`;
     return pool.query(sql, [payload.id]);
   }
 
-  static findUsersCategory(payload: { categoryId: number }) {
-    const sql = `SELECT * FROM customers WHERE category_id = $1`;
-    return pool.query(sql, [payload.categoryId]);
+  static findUsersCategory(payload: { customerId: number }) {
+    const sql = `SELECT * FROM customers WHERE id = $1`;
+    return pool.query(sql, [payload.customerId]);
   }
 
   static save(profile: UserType) {
-    const sql = `UPDATE users SET first_name = $1, last_name = $2, email = $3 WHERE id = $4 RETURNING *`;
+    const sql = `UPDATE customers SET first_name = $1, last_name = $2, email = $3 WHERE id = $4 RETURNING *`;
     return pool.query(sql, [
       profile.first_name,
       profile.last_name,

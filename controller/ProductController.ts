@@ -16,8 +16,7 @@ import {
   ProductType,
 } from "../dto";
 import { GenerateSignature, ValidatePassword } from "../utility";
-import { FindVendor } from "../controller";
-import { Vendor, Product, ProductPrice, ProductPromotion } from "../model";
+import { Product, ProductPrice, ProductPromotion } from "../model";
 import { FindUser } from "./UserController";
 
 export const AddProduct = async (
@@ -184,4 +183,100 @@ export const GetProducts = async (
 //       .json({ message: "The Order with the given ID was not found." });
 
 //   res.status(200).json({ order: order });
+// };
+
+// export const UpdateVendorProfile = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   const { name, address_line1, address_line2, email, tel, password } =
+//     req.body as VendorType;
+
+//   const user = req.user as UserPayload;
+//   if (!user)
+//     return res
+//       .status(401)
+//       .json({ message: "Access denied. No token provided." });
+
+//   let existingVendor = (await FindVendor(user.id)) as any;
+//   if (!existingVendor.rows[0])
+//     return res.status(400).json({ message: "Invalid Vendor!" });
+
+//   existingVendor = existingVendor.rows[0];
+
+//   existingVendor.name = name;
+//   existingVendor.address_line1 = address_line1;
+//   existingVendor.address_line2 = address_line2;
+//   existingVendor.email = email;
+//   existingVendor.tel = tel;
+//   existingVendor.password = password;
+
+//   const result = await Vendor.save(existingVendor, existingVendor.id);
+
+//   res.json(
+//     _.pick(result.rows[0], [
+//       "id",
+//       "name",
+//       "password",
+//       "email",
+//       "tel",
+//       "address_line1",
+//       "address_line2",
+//     ])
+//   );
+// };
+
+// export const UpdateVendorCoverImage = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   const user = req.user as UserPayload;
+//   if (!user)
+//     return res
+//       .status(401)
+//       .json({ message: "Access denied. No token provided." });
+
+//   let existingVandor = await FindVendor(user.id);
+//   if (!existingVandor)
+//     return res.status(400).json({ message: "Invalid Vendor!" });
+
+//   const files = req.files as [Express.Multer.File];
+//   const images = files.map((file: Express.Multer.File) => file.filename);
+//   existingVandor.rows[0].coverImages.push(...images);
+
+//   await existingVandor.rows[0].save();
+//   res.status(200).json({ result: existingVandor });
+// };
+
+// export const UpdateVendorService = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
+//   const user = req.user as UserPayload;
+//   if (!user)
+//     return res
+//       .status(401)
+//       .json({ message: "Access denied. No token provided." });
+
+//   let existingVendor = (await FindVendor(user.id)) as any;
+//   if (!existingVendor)
+//     return res.status(400).json({ message: "Invalid Vendor!" });
+
+//   existingVendor = existingVendor.rows[0];
+//   existingVendor.service_available = !existingVendor.service_available;
+
+//   const { lat, lng } = req.body as UserType;
+//   if (!(lat && lng))
+//     return res.status(400).json({
+//       message: "We were unable to locate the vendor's location.",
+//     });
+
+//   existingVendor.lat = lat;
+//   existingVendor.lng = lng;
+
+//   const result = await Vendor.saveSevice(existingVendor, existingVendor.id);
+//   res.send(result.rows[0]);
 // };

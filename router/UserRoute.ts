@@ -7,6 +7,8 @@ import {
   GetUserProfile,
   EditUserProfile,
   CreateCustomer,
+  GetCustomers,
+  GetCustomerByID,
 } from "../controller";
 import { Authenticate } from "../middleware/CommonAuth";
 
@@ -20,6 +22,10 @@ profile
 */
 router.get("/profile", Authenticate, GetUserProfile);
 router.patch("/edit_profile", Authenticate, EditUserProfile);
+
+//customer
 router.post("/create-customer", Authenticate, CreateCustomer);
+router.get("/get-customers", Authenticate, GetCustomers);
+router.get("/get-customers-by-id/:id", Authenticate, GetCustomerByID);
 
 export { router as UserRoute };

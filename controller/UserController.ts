@@ -1,6 +1,6 @@
 import { plainToClass } from "class-transformer";
 import { Request, Response, NextFunction } from "express";
-import { maxLength, validate } from "class-validator";
+import { validate } from "class-validator";
 
 import _ from "lodash";
 
@@ -10,6 +10,8 @@ import {
   CreateUserLogin,
   EditProfile,
   UserType,
+  CreateVendorInput,
+  CreateCustomerInput,
 } from "../dto";
 import {
   GenerateOtp,
@@ -20,16 +22,11 @@ import {
   onRequestOtp,
 } from "../utility";
 import {} from "./../utility/PasswordUnility";
-import {
-  Customer,
-  // Grocery,
-  User,
-  // Transaction,
-  // Order,
-  // Offer,
-  // Vandor,
-  // DeliveryUser,
-} from "../model";
+import { Customer, User } from "../model";
+
+/*
+ * User section
+ */
 
 export const FindUser = (id: number, tel?: string) => {
   if (tel) return User.findOne({ tel: tel });
@@ -231,7 +228,7 @@ export const EditUserProfile = async (
   const { first_name, last_name, email } = <UserType>userInputs;
 
   let profile = (await User.findById({ id: user.id })) as any;
-  if (!profile) return res.status(400).json({ message: "Invalid Vendor!" });
+  if (!profile) return res.status(400).json({ message: "Invalid User!" });
 
   profile = profile.rows[0];
 
@@ -253,20 +250,30 @@ export const EditUserProfile = async (
   );
 };
 
+/*
+ * Customer section
+ */
+
 export const CreateCustomer = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  // const vendorInput = plainToClass(CreateVendorInput, req.body);
-  // const vendorInputErrors = await validate(vendorInput, {
-  //   validationError: { target: true },
-  // });
-  // if (vendorInputErrors.length > 0) {
-  //   return res
-  //     .status(400)
-  //     .json(_.map(vendorInputErrors, (error: any) => error.constraints));
-  // }
+  const user = req.user as UserPayload;
+  if (!user)
+    return res
+      .status(401)
+      .json({ message: "Access denied. No token provided." });
+
+  const vendorInput = plainToClass(CreateCustomerInput, req.body);
+  const vendorInputErrors = await validate(vendorInput, {
+    validationError: { target: true },
+  });
+  if (vendorInputErrors.length > 0) {
+    return res
+      .status(400)
+      .json(_.map(vendorInputErrors, (error: any) => error.constraints));
+  }
 
   const {
     first_name,
@@ -279,13 +286,13 @@ export const CreateCustomer = async (
     email,
     tel,
     city,
-  } = <any>req.body;
+  } = vendorInput;
 
-  const existVendor = await Customer.findOne({ tel: tel });
-  if (existVendor.rows.length > 0)
+  const existCustomer = await Customer.findOne({ tel: tel });
+  if (existCustomer.rows.length > 0)
     return res.status(400).json({ message: "Customer already registered." });
 
-  const vendor = await new Customer({
+  const customer = await new Customer({
     first_name,
     last_name,
     category_id,
@@ -297,11 +304,12 @@ export const CreateCustomer = async (
     tel,
     lat: 0,
     lng: 0,
+    approved_by: user.id,
     city,
     modified_at: new Date(),
-  } as Customer);
+  } as CreateCustomerInput);
 
-  const result = await vendor.create();
+  const result = await customer.create();
   if (!result) return res.json({ message: "Error found" });
 
   // generate signture
@@ -319,4 +327,25 @@ export const CreateCustomer = async (
       name: result.rows[0].name,
       email: result.rows[0].email,
     });
+};
+
+export const GetCustomers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const customer = await Customer.find();
+  if (!customer)
+    return res.status(404).json("Message: Customer does not exist");
+  return res.json(customer.rows);
+};
+
+export const GetCustomerByID = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const customer = await Customer.findById({ id: req.params.id });
+  if (customer != null) return res.status(200).json(customer.rows[0]);
+  return res.status(404).json({ Message: "With this id, there is no vendor." });
 };
