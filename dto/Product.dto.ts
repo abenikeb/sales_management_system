@@ -83,3 +83,33 @@ export interface ProductType {
   created_at: Date;
   modified_at?: Date;
 }
+
+export class CreateProductPrice {
+  @IsNotEmpty()
+  @Min(10)
+  @Max(1000)
+  price: number;
+
+  @IsNotEmpty()
+  @IsInt()
+  product_id: number;
+
+  @IsNotEmpty()
+  @IsInt()
+  user_categories_id: Number;
+}
+
+export class CreateProductPrmotion {
+  @IsNotEmpty()
+  @Min(10)
+  @Max(1000)
+  amount_price: number;
+
+  @IsNotEmpty()
+  @IsInt()
+  product_id: number;
+
+  @IsNotEmpty()
+  @IsInt()
+  user_categories_id: Number;
+}

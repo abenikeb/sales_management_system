@@ -33,9 +33,25 @@ export class Product {
     return result;
   }
 
-  static findOne(payload: { email: string }) {
-    const sql = `SELECT * FROM products WHERE email = $1`;
-    return pool.query(sql, [payload.email]);
+  static find() {
+    const sql = `SELECT * FROM products`;
+    return pool.query(sql);
+  }
+
+  static findOne(payload: { _sku: number }) {
+    const sql = `SELECT * FROM products WHERE product_sku = $1`;
+    return pool.query(sql, [payload._sku]);
+  }
+
+  static findById(payload: { id: number }) {
+    const sql = `SELECT * FROM products WHERE products.id = $1`;
+    return pool.query(sql, [payload.id]);
+  }
+
+  static findByPrice(payload: { id: number }) {
+    const sql = `SELECT products.id, products.product_sku, products._desc, products.created_by, product_prices.price
+                 FROM products INNER JOIN product_prices ON products.id = product_prices.product_id WHERE products.id = $1`;
+    return pool.query(sql, [payload.id]);
   }
 
   static findByUserId(payload: { userId: number }) {
@@ -43,9 +59,30 @@ export class Product {
     return pool.query(sql, [payload.userId]);
   }
 
-  static findById(payload: { id: number }) {
-    const sql = `SELECT products.id, products.product_sku, products._desc, products.created_by, product_prices.price
-                 FROM products INNER JOIN product_prices ON products.id = product_prices.product_id WHERE products.id = $1`;
+  static save(payload: { info: any; id: number }) {
+    const sql = `UPDATE products SET product_sku = $1, _desc = $2, modified_at = $3 WHERE id = $4 RETURNING *`;
+    const { product_sku, _desc, modified_at } = payload.info;
+    return pool.query(sql, [product_sku, _desc, modified_at, payload.id]);
+  }
+
+  static findByIdAndRemove(payload: { id: number }) {
+    const sql = `DELETE FROM products WHERE id = $1 RETURNING *`;
+    return pool.query(sql, [payload.id]);
+  }
+
+  static findByPriceAndCategory() {
+    const sql = `SELECT P.id, P._desc, P.product_sku, P.product_images, P.created_at, PP.price, UG.name
+                 FROM products as P JOIN product_prices as PP
+                 ON P.id = PP.product_id INNER JOIN user_categories as UG
+                 ON PP.user_categories_id = UG.id`;
+    return pool.query(sql);
+  }
+
+  static findByPriceAndCategoryByCategoryId(payload: { id: number }) {
+    const sql = `SELECT P.id, P._desc, P.product_sku, P.product_images, P.created_at, PP.price, UG.name, UG.id FROM products as P
+                 INNER JOIN product_prices as PP ON P.id = PP.product_id
+                 INNER JOIN user_categories as UG ON PP.user_categories_id = UG.id                 
+                 WHERE UG.id = $1`;
     return pool.query(sql, [payload.id]);
   }
 
@@ -126,6 +163,13 @@ export class ProductPrice {
     ]);
     return result;
   }
+
+  // static findOne(payload: { product_id: number; category_id: number }) {
+  //   const sql = `SELECT * FROM product_prices WHERE
+  //                product_id = $1 AND user_categories_id = $2`;
+  //   return pool.query(sql, [payload.product_id, payload.category_id]);
+  // }
+
   static findById(payload: { id: number }) {
     const sql = `SELECT * FROM product_prices WHERE product_prices.product_id = $1`;
     return pool.query(sql, [payload.id]);

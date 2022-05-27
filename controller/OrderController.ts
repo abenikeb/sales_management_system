@@ -37,39 +37,6 @@ import {
 //   }
 // };
 
-/* ---------  Assign Order for Delivery ------------*/
-// const AssignDeliveryBoy = async (orderID: string, vandorID: string) => {
-//   // find the vandor
-//   const vandor = await Vandor.findById(vandorID);
-//   if (!vandor) return;
-
-//   let areaCode = vandor.pincode;
-//   let vandorLat = vandor.lat;
-//   let vandorLng = vandor.lng;
-
-//   // find avaliable delivery Boy
-//   const avaliableDelivery = await DeliveryUser.find({
-//     pinCode: areaCode,
-//     isAvalaible: true,
-//     verified: true,
-//   });
-
-//   //cheak the nearst delivey boy and Assign
-//   if (!avaliableDelivery) {
-//     console.log(`Delivery person ${avaliableDelivery[0]}`);
-//     return;
-//   }
-
-//   //update the delivery ID
-//   const currentOrder = await Order.findById(orderID);
-//   if (!currentOrder) return;
-
-//   currentOrder.deliveryID = avaliableDelivery[0].id;
-//   await currentOrder.save();
-//   console.log(currentOrder);
-//   // push notification using firebase
-// };
-
 //payment section
 
 // export const CratePayment = async (
@@ -122,7 +89,9 @@ import {
 //     return { status: true, currentTransaction };
 // };
 
-//order Section
+/*
+ * CREATE ORDER SECTION
+ */
 
 export const CreateOrder = async (req: Request, res: Response) => {
   const user = req.user as UserPayload;
@@ -230,6 +199,10 @@ export const CreateOrder = async (req: Request, res: Response) => {
   return res.status(200).json({ orderResult: orderResult.rows[0] });
 };
 
+/*
+ * APPROVE ORDER SECTION
+ */
+
 export const approveOrderStatus = async (
   req: Request,
   res: Response,
@@ -298,6 +271,15 @@ export const approveOrderStatus = async (
     } as OrderNotification);
     await notification.create();
   }
+};
+
+/*
+ * Helper functions
+ */
+const price = async (id: any) => {
+  const product = await ProductPrice.findById({ id });
+  const price = product.rows[0]?.price;
+  !price ? false : price;
 };
 
 // export const GetOrders = async (
@@ -398,13 +380,3 @@ export const approveOrderStatus = async (
 //   await profile.save();
 //   res.json(profile);
 // };
-
-/*
- * Helper functions
- */
-const price = async (id: any) => {
-  const product_price = await ProductPrice.findById({ id });
-  const price = product_price.rows[0]?.price;
-  if (!price) return false;
-  return price;
-};

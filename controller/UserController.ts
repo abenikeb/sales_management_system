@@ -333,8 +333,9 @@ export const GetCustomers = async (
   next: NextFunction
 ) => {
   const customer = await Customer.find();
-  if (!customer)
-    return res.status(404).json("Message: Customer does not exist");
+  if (!customer.rows)
+    return res.status(200).json({ message: "No Customer Registered!" });
+
   return res.json(customer.rows);
 };
 
@@ -344,8 +345,48 @@ export const GetCustomerByID = async (
   next: NextFunction
 ) => {
   const customer = await Customer.findById({ id: req.params.id });
-  if (customer != null) return res.status(200).json(customer.rows[0]);
-  return res.status(404).json({ Message: "With this id, there is no vendor." });
+  if (!customer.rows[0])
+    return res.status(404).json({
+      error: "We are unable to locate the customer with the provided id.",
+    });
+  return res.status(200).json(customer.rows[0]);
+};
+
+export const GetCustomersByUserCategory = async (
+  req: Request,
+  res: Response
+) => {
+  const categoryId = req.query.id as any;
+
+  const result = await UserCategory.findCustomer({ id: categoryId });
+
+  if (!result.rows) return res.json({ message: "Error found" });
+
+  return res.json(
+    result.rows.map((list) => {
+      return {
+        customer: {
+          id: list.id,
+          product_sku: list.product_sku,
+          first_name: list.first_name,
+          last_name: list.last_name,
+          email: list.email,
+          tel: list.tel,
+          business_licenses_no: list.business_licenses_no,
+          plate_no: list.plate_no,
+          territory: list.territory,
+          city: list.city,
+          type: list.type_id,
+          approved_by: list.approved_by,
+        },
+        usersCategory: {
+          id: list.category_id,
+          name: list.name,
+          desc: list._desc,
+        },
+      };
+    })
+  );
 };
 
 export const GetCustomerBySearch = async (req: Request, res: Response) => {
@@ -386,7 +427,7 @@ export const UpdateCustomerProfile = async (req: Request, res: Response) => {
   if (!customer.rows[0])
     return res
       .status(404)
-      .send("The customer with the given Id doesnot exist!");
+      .send({ error: "The customer with the given Id doesnot exist!" });
 
   const { first_name, last_name, email } = customerInput;
 
@@ -402,7 +443,7 @@ export const UpdateCustomerProfile = async (req: Request, res: Response) => {
   if (!result.rows[0])
     return res
       .status(404)
-      .send("The customer with the given Id doesnot exist!");
+      .send({ error: "The customer with the given Id doesnot exist!" });
 
   res.send(result.rows[0]);
 };
@@ -461,29 +502,80 @@ export const GetUserCategoryById = async (req: Request, res: Response) => {
   });
 };
 
-export const GetCustomersByUserCategory = async (
+export const GetProductWithPrice_ByCategoryId = async (
   req: Request,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) => {
   const categoryId = req.query.id as any;
 
-  const result = await UserCategory.findCustomer({ id: categoryId });
-
-  if (!result.rows) return res.json({ message: "Error found" });
-
-  return res.json({
-    result: result.rows,
+  const listProduct = await UserCategory.findByPriceAndCategoryByCategoryId({
+    id: categoryId,
   });
+  if (!listProduct.rows) return res.json({ Message: "No Product Found!" });
+
+  return res.send(
+    listProduct.rows.map((list) => {
+      return {
+        product: {
+          product_sku: list.product_sku,
+          desc: list._desc,
+          product_images: list.product_images,
+          created_by: list.created_by,
+        },
+        price: list.price,
+        usersCategory: {
+          id: list.id,
+          name: list.name,
+        },
+      };
+    })
+  );
 };
 
 export const UpdateUserCategory = async (req: Request, res: Response) => {
   const categoryId = req.query.id as any;
 
-  const result = await UserCategory.save({ info: categoryId, id: categoryId });
+  const { name, _desc } = req.body;
 
-  if (!result.rows) return res.json({ message: "Error found" });
+  let userCategoriesData = (await UserCategory.findById({
+    id: categoryId,
+  })) as any;
+  if (!userCategoriesData.rows[0])
+    return res.status(404).json({
+      message: "Unable to find user category with this id!",
+    });
+
+  userCategoriesData = userCategoriesData.rows[0];
+
+  userCategoriesData.name = name;
+  userCategoriesData._desc = _desc;
+  userCategoriesData.modified_at = new Date();
+
+  const result = await UserCategory.save({
+    info: userCategoriesData,
+    id: categoryId,
+  });
+
+  if (!result.rows)
+    return res.status(404).json({ message: "Invalid User Category" });
 
   return res.json({
-    result: result.rows,
+    result: result.rows[0],
   });
+};
+
+export const RemoveUsersCategory = async (req: Request, res: Response) => {
+  const categoryId = req.params.id as any;
+
+  const result = await UserCategory.findByIdAndRemove({
+    id: categoryId,
+  });
+
+  if (!result.rows[0])
+    return res
+      .status(404)
+      .send("The users category with the given Id doesnot exist!");
+
+  res.send(result.rows[0]);
 };

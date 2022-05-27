@@ -227,4 +227,12 @@ export class UserCategory {
     const sql = `DELETE FROM user_categories WHERE id = $1 RETURNING *`;
     return pool.query(sql, [payload.id]);
   }
+
+  static findByPriceAndCategoryByCategoryId(payload: { id: number }) {
+    const sql = `SELECT P._desc, P.product_sku, P.product_images, P.created_at, PP.price, UG.name, UG.id FROM products as P
+                 INNER JOIN product_prices as PP ON P.id = PP.product_id
+                 INNER JOIN user_categories as UG ON PP.user_categories_id = UG.id                 
+                 WHERE UG.id = $1`;
+    return pool.query(sql, [payload.id]);
+  }
 }

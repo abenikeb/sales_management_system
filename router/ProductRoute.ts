@@ -2,8 +2,13 @@ import express from "express";
 import {
   AddProduct,
   GetProducts,
+  GetProductById,
   AddProductPrice,
   AddProductPromotion,
+  UpdateProduct,
+  RemoveProduct,
+  GetAllProductsWithPriceAndCategory,
+  GetProductWithPriceAndCategory_ById,
   //   UpdateVendorCoverImage,
   //   UpdateVendorProfile,
   //   UpdateVendorProfile,
@@ -15,6 +20,7 @@ import {
 
 import { Authenticate } from "../middleware/CommonAuth";
 import multer from "multer";
+import { AdminAuth } from "../middleware";
 const router = express.Router();
 
 const imageStorage = multer.diskStorage({
@@ -37,12 +43,37 @@ const images = multer({ storage: imageStorage }).array("images", 10);
 // router.post("/updateCover", images, UpdateVendorCoverImage);
 // router.post("/updateService", Authenticate, UpdateVendorService);
 
-// //product section
+/*
+ * PRODUCT SECTION
+ */
 router.post("/add", [Authenticate, images], AddProduct);
 router.get("/get", Authenticate, GetProducts);
+router.get(
+  "/get-all-product-with-price-and-category",
+  Authenticate,
+  GetAllProductsWithPriceAndCategory
+);
+router.get(
+  "/get-all-product-with-price-and-category-by-category-id?:id",
+  Authenticate,
+  GetProductWithPriceAndCategory_ById
+);
+router.get("/get-by-id", Authenticate, GetProductById);
+router.patch("/update?:id", Authenticate, UpdateProduct);
+router.delete("/remove/:id", [Authenticate, AdminAuth], RemoveProduct);
+// ** update or delete on table "products" violates foreign key constraint "product_prices_product_id_fkey" on table "product_prices"
+
+/*
+ * PRODUCT PRICE SECTION
+ */
+
 router.post("/add-price", Authenticate, AddProductPrice);
+
+/*
+ * PRODUCT PROMOTION SECTION
+ */
+
 router.post("/add-promotion", Authenticate, AddProductPromotion);
-// router.get("/groceries", GetGroceries);
 
 // //order section
 // router.get("/orders", GetOrdersVandor);
