@@ -2,13 +2,14 @@ import pool from "../service/DataBase";
 import { OrderPrice, OrderType, VAT_PERCENT, EXCISE_PERCENT } from "../dto";
 
 export class CreateOrderType {
-  orderId: number;
+  orderId?: string;
+  totalPromotion: number;
   netPrice: number;
-  addedTax?: number;
+  addedTax: number;
   excise_tax?: number;
   grossPrice?: number;
   remarks?: string;
-  customer_id: string;
+  customer_id: number;
   status: number;
   approved_by: string;
   payment_via?: string;
@@ -17,29 +18,37 @@ export class CreateOrderType {
 
   constructor(order: OrderType) {
     this.orderId = order.orderId;
-    this.netPrice = order.netPrice;
-    this.addedTax = GenerateOrderPrice(this.netPrice).addedTax;
-    this.excise_tax = GenerateOrderPrice(this.netPrice).exciseTax;
+    this.totalPromotion = conversionDecimal(order.totalPromotion);
+    this.netPrice = conversionDecimal(order.netPrice);
+    this.addedTax = conversionDecimal(
+      GenerateOrderPrice(this.netPrice).addedTax
+    );
+    this.excise_tax = conversionDecimal(
+      GenerateOrderPrice(this.netPrice).exciseTax
+    );
     /** Calculate the default price from the total price */
-    this.grossPrice = GenerateOrderPrice(
-      // Calculate Net Price
-      this.netPrice
-    ).grossPrice;
+    this.grossPrice = conversionDecimal(
+      GenerateOrderPrice(
+        // Calculate grossPrice Price
+        this.netPrice
+      ).grossPrice
+    );
     this.remarks = order.remarks;
     this.status = order.status || 1;
     this.customer_id = order.customer_id;
     this.payment_via = order.payment_via;
     this.approved_by = order.approved_by;
-    this.modified_at = order.modified_at;
+    this.modified_at = new Date();
   }
 
   create() {
-    const _sql = `INSERT INTO orders (orderId, net_price, add_tax, excise_tax, gross_price, remarks, status, customer_id,
+    const _sql = `INSERT INTO orders (orderId, total_promotion, net_price, add_tax, excise_tax, gross_price, remarks, status, customer_id,
                    payment_via, approved_by, created_at, modified_at)
-                  VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`;
+                  VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`;
 
     const result = pool.query(_sql, [
       this.orderId,
+      this.totalPromotion,
       this.netPrice,
       this.addedTax,
       this.excise_tax,
@@ -56,8 +65,6 @@ export class CreateOrderType {
   }
 
   static save(payload: { id: number; status: OrderType }) {
-    console.log({ id: payload.id, status: payload.status });
-
     const sql = `UPDATE orders SET status = $1 WHERE id = $2 RETURNING *`;
     return pool.query(sql, [payload.status, payload.id]);
   }
@@ -72,8 +79,8 @@ export class CreateOrderItem {
   constructor(order: any) {
     this.order_id = order.order_id;
     this.product_id = order.product_id;
-    this.promotion = order.promotion;
-    this.quantity = order.quantity || 1;
+    this.promotion = order.qty_promotion;
+    this.quantity = order.qty || 1;
   }
 
   create() {
@@ -133,7 +140,7 @@ export class OrderNotification {
   header: string;
   isRead: boolean;
   type?: Readonly<number>;
-  receiver_id: number;
+  receiver_id: Array<number>;
   status?: number;
   link_url: string;
   created_at: Date = new Date();
@@ -142,7 +149,7 @@ export class OrderNotification {
   constructor(orderNotification: OrderNotification) {
     this.message = orderNotification.message;
     this.header = orderNotification.header;
-    this.isRead = false;
+    // this.isRead = false;
     this.type = orderNotification.type;
     this.receiver_id = orderNotification.receiver_id;
     this.link_url = orderNotification.link_url;
@@ -150,7 +157,7 @@ export class OrderNotification {
     this.modified_at = new Date();
   }
   create() {
-    const _sql = `INSERT INTO notifications (message, header, type, receiver_id, status, created_at, link_url, modified_at)
+    const _sql = `INSERT INTO notifications (message, header, type, _receiver_id, status, created_at, link_url, modified_at)
                   VALUES($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`;
 
     const result = pool.query(_sql, [
@@ -172,13 +179,27 @@ export class OrderNotification {
 export const GenerateOrderPrice = (netPrice: number): OrderPrice => {
   const orderPrice: OrderPrice = {
     netPrice: netPrice,
-    exciseTax: EXCISE_PERCENT * netPrice,
-    addedTax: VAT_PERCENT * netPrice,
+    exciseTax: (EXCISE_PERCENT * netPrice + netPrice) as number,
+    addedTax: (VAT_PERCENT * (EXCISE_PERCENT * netPrice + netPrice)) as number,
   };
 
-  orderPrice.grossPrice =
-    (orderPrice.exciseTax + netPrice) * VAT_PERCENT +
-    (orderPrice.exciseTax + netPrice);
+  orderPrice.grossPrice = orderPrice.exciseTax + orderPrice.addedTax;
+  // (orderPrice.exciseTax + netPrice);
 
   return orderPrice;
+};
+
+export const conversionDecimal = (numeric?: number): number => {
+  // const orderPrice: OrderPrice = {
+  //   netPrice: netPrice,
+  //   exciseTax: (EXCISE_PERCENT * netPrice + netPrice) as number,
+  //   addedTax: (VAT_PERCENT * (EXCISE_PERCENT * netPrice + netPrice)) as number,
+  // };
+
+  return Number(numeric?.toFixed(2));
+
+  // orderPrice.grossPrice = orderPrice.exciseTax + orderPrice.addedTax;
+  // (orderPrice.exciseTax + netPrice);
+
+  // return orderPrice;
 };

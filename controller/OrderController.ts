@@ -1,7 +1,7 @@
 // offer Section
 import { Request, Response, NextFunction } from "express";
 import _ from "lodash";
-import { OrderInputs, UserPayload } from "../dto";
+import { OrderInputs, OrderType, UserPayload } from "../dto";
 import {
   CreateOrderItem,
   CreateOrderType,
@@ -11,6 +11,7 @@ import {
   Product,
   ProductPrice,
   User,
+  UserCategory,
 } from "../model";
 
 // export const ApplyOffer = async (
@@ -100,38 +101,54 @@ export const CreateOrder = async (req: Request, res: Response) => {
       .status(401)
       .json({ message: "Access denied. No token provided." });
 
-  const { items, customer_id, remarks, user_categories_id } = <OrderInputs>(
-    req.body
-  );
-
   let profile = await User.findById({ id: user.id });
   if (!profile) return res.status(400).json({ message: "Invalid profile!" });
 
+  const { items, customer_id, remarks } = <OrderInputs>req.body;
+
+  const customer = await Customer.findById({ id: customer_id });
+  if (!customer.rows[0])
+    return res.status(400).json({ error: "Invalid Customer." });
+
+  const result = await Customer.findUsersCategory({
+    customerId: customer_id,
+  });
+  const user_categories_id = result.rows[0].category_id;
+
+  //Random number generate as orderID assign for order
   let orderID = `${Math.floor(Math.random() * 89999) + 1000}`;
   let productItems = [] as Array<any>;
-  let cartItems = [] as Array<any>;
+  let productCollection = [] as Array<any>;
   let netAmount = 0.0;
+  let totalPromotion = 0.0;
 
-  //calculate order amount
+  /*
+   * find the product info from incoming items collection array
+   * this is because orders amount calculated at the backend
+   */
   const products = _.map(items, (item) => item.product_id);
   for (let id = 0; id < products.length; id++) {
     productItems.push(
       await (
-        await Product.findById({ id: products[id] })
+        await Product.findWithPriceAndPromotionById({
+          id: products[id],
+          user_categories_id: user_categories_id,
+        })
       ).rows[0]
     );
   }
 
   if (productItems) {
     productItems.map((product) => {
-      items.map(async ({ product_id, quantity, promotion }) => {
-        if (product?.id == product_id) {
-          netAmount += product?.price * quantity;
-          //promotion
-          cartItems.push({
+      items.map(async ({ product_id, qty, qty_promotion }) => {
+        if (product && product.id == product_id) {
+          netAmount += product.price * qty;
+          totalPromotion += product.amount_price * qty_promotion;
+
+          productCollection.push({
             product,
-            quantity,
-            promotion,
+            qty,
+            qty_promotion,
             customer_id,
             user_categories_id,
           });
@@ -141,44 +158,52 @@ export const CreateOrder = async (req: Request, res: Response) => {
   }
 
   //create order with item description
-  if (!cartItems) return false;
+  if (!productCollection) return false;
   // create order
-  const currentOrder = new CreateOrderType({
+  const order = new CreateOrderType({
     netPrice: netAmount,
+    totalPromotion,
     orderId: orderID,
     customer_id: customer_id,
-    approved_by: profile.rows[0].id,
-    status: 1,
+    approved_by: profile.rows[0].user_name,
+    status: 1, // status assigned 1 always when created
     remarks: remarks,
     payment_via: "",
-    modified_at: new Date(),
-  } as any);
+  } as OrderType);
 
-  const orderResult = await currentOrder.create();
+  const orderResult = await order.create();
 
-  if (!orderResult) return false;
+  if (!orderResult)
+    res.status(400).json({ error: "The Order was unable to be created." });
 
-  const resultCartItems = _.map(
-    cartItems,
-    async ({ product, quantity, promotion }) => {
+  const resultOrderItemCollection = _.map(
+    productCollection,
+    async ({ product, qty, qty_promotion }) => {
       const orderItem = new CreateOrderItem({
         order_id: orderResult.rows[0].id,
         product_id: product.id,
-        promotion: promotion,
-        quantity: quantity,
+        qty_promotion,
+        qty,
       });
       await orderItem.create();
     }
   );
 
-  if (!resultCartItems) return false;
+  if (!resultOrderItemCollection)
+    res
+      .status(400)
+      .json({ error: "The Order items was unable to be created." });
 
-  // push notifications
+  const users = await User.findIndex(1, 2);
+
+  // push notifications to [admin, fince & other parties] after crateing an order
   const notification = new OrderNotification({
-    header: "New order has been created!",
-    message: `The order is created and approved by ${orderResult.rows[0].approved_by}`,
+    header: "A new order has been created.!",
+    message: `Customer ${customer.rows[0].first_name} ${customer.rows[0].last_name} receives a sales order, which is approved by sales officer ${profile.rows[0].user_name}. Please review and authorize the order.`,
     type: 1,
-    receiver_id: 2,
+    receiver_id: users.rows.map((user) => {
+      return user.id;
+    }),
     status: 1,
     link_url: `api/users/orders/?id=${orderResult.rows[0].id}`,
   } as OrderNotification);
@@ -196,7 +221,7 @@ export const CreateOrder = async (req: Request, res: Response) => {
 
   // await AssignDeliveryBoy(currentOrder.id, vendorId);
   // finally update orders to user account
-  return res.status(200).json({ orderResult: orderResult.rows[0] });
+  return res.status(200).json({ orderResult: orderResult });
 };
 
 /*
@@ -228,7 +253,7 @@ export const approveOrderStatus = async (
       header: "The order status changed!",
       message: `The order is creaed and approved by`,
       type: 1,
-      receiver_id: 2,
+      receiver_id: [2],
       status: 1,
       link_url: `api/users/orders/?id=${result.rows[0].id}`,
     } as OrderNotification);
@@ -265,7 +290,7 @@ export const approveOrderStatus = async (
       header: "The status of your order has been updated!",
       message: `The order has been updated in the sales report.`,
       type: 1,
-      receiver_id: 2,
+      receiver_id: [2],
       status: 1,
       link_url: `api/users/orders/?=${result.rows[0].id}`,
     } as OrderNotification);
@@ -324,7 +349,7 @@ const price = async (id: any) => {
 //   let product = await Product.findById(product_id);
 //   if (!product) return;
 
-//   let cartItems = profile.cart;
+//   let productCollection = profile.cart;
 
 //   /*
 //    *finding if there is cart item in the profile

@@ -52,6 +52,16 @@ export class User {
     ]);
     return result;
   }
+  static find() {
+    const sql = `SELECT * FROM users`;
+    return pool.query(sql);
+  }
+
+  static findIndex(ind1: number, ind2: number) {
+    const sql = `SELECT U.id FROM users as U
+                 WHERE U.user_group IN (${ind1},${ind2})`;
+    return pool.query(sql);
+  }
 
   static findOne(payload: { tel: string }) {
     const sql = `SELECT * FROM users WHERE tel = $1`;

@@ -18,8 +18,8 @@ export const EXCISE_PERCENT = 0.1;
 
 export interface ProductItems {
   product_id: number;
-  promotion: number;
-  quantity: number;
+  qty_promotion: number;
+  qty: number;
 }
 
 export class OrderInputs {
@@ -67,13 +67,14 @@ export class CreateOrderType {
 }
 
 export interface OrderType {
-  orderId: number;
+  orderId?: string;
   netPrice: number;
+  totalPromotion: number;
   addedTax?: number;
   excise_tax?: number;
   grossPrice?: number;
   remarks?: string;
-  customer_id: string;
+  customer_id: number;
   status: number;
   approved_by: string;
   payment_via?: string;

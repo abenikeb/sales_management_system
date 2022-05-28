@@ -79,61 +79,25 @@ export class Product {
   }
 
   static findByPriceAndCategoryByCategoryId(payload: { id: number }) {
-    const sql = `SELECT P.id, P._desc, P.product_sku, P.product_images, P.created_at, PP.price, UG.name, UG.id FROM products as P
+    const sql = `SELECT P.id as id2, P._desc, P.product_sku, P.product_images, P.created_at, PP.price, UG.name, UG.id FROM products as P
                  INNER JOIN product_prices as PP ON P.id = PP.product_id
                  INNER JOIN user_categories as UG ON PP.user_categories_id = UG.id                 
                  WHERE UG.id = $1`;
     return pool.query(sql, [payload.id]);
   }
 
-  // static findInId(payload: { items: Array<any> }) {
-  //   //     const sql = `
-  //   //                 top_regions AS (
-  //   //                 SELECT products.id
-  //   //                 FROM products
-  //   //                 WHERE products.id = (SELECT $1 FROM products)
-  //   //             )
-  //   // SELECT * FROM products WHERE products.id IN ($1::int[])`;
-  //   // const sql = `for products.id in $1
-  //   //                   from products
-  //   //                   limit 10
-  //   //                 loop
-  //   //                 raise notice '% - % ', f.product_id
-  //   //                 end loop`;
-
-  //   const resultArray = [] as any;
-  //   const itemsCollection = _.map(payload.items, (item) => item);
-
-  //   return _.forEach(itemsCollection, (item) => {
-  //     const sql = `SELECT products.product_sku FROM products WHERE products.id = $1`;
-  //     return pool.query(sql, [item.product_id]);
-  //   });
-  //   // for (let idx = 0; idx <= 1; idx++) {
-  //   // }
-  //   // const result = pool.query(sql, [itemsCollection[0]]);
-  // }
-
-  //   static save(profile: ProductType, id: number) {
-  //     const sql = `UPDATE products SET name = $1, address_line1 = $2, tag_id = $3, email = $4, tel = $5,
-  //     password = $6 WHERE id = $7 RETURNING *`;
-  //     const { name, address_line1, address_line2, email, tel, password } =
-  //       profile;
-  //     return pool.query(sql, [
-  //       name,
-  //       address_line1,
-  //       address_line2,
-  //       email,
-  //       tel,
-  //       password,
-  //       id,
-  //     ]);
-  //   }
-
-  //   static saveSevice(profile: ProductType, id: number) {
-  //     const sql = `UPDATE venders SET service_available = $1, lat = $2, lng = $3 WHERE id = $4 RETURNING *`;
-  //     const { service_available, lat, lng } = profile;
-  //     return pool.query(sql, [service_available, lat, lng, id]);
-  //   }
+  static findWithPriceAndPromotionById(payload: {
+    id: number;
+    user_categories_id: number;
+  }) {
+    const sql = `SELECT P.id, P.product_sku, P._desc, P.created_by, PP.price, PPT.amount_price FROM products as P 
+                 INNER JOIN product_prices as PP ON P.id = PP.product_id 
+                 INNER JOIN product_promotion as PPT ON P.id = PPT.product_id
+                 WHERE P.id = ${payload.id} AND 
+                              PP.user_categories_id = ${payload.user_categories_id} AND
+                              PPT.user_categories_id = ${payload.user_categories_id}`;
+    return pool.query(sql);
+  }
 }
 
 export class ProductPrice {

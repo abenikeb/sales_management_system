@@ -148,6 +148,7 @@ export const GetProductWithPriceAndCategory_ById = async (
     listProduct.rows.map((list) => {
       return {
         product: {
+          id: list.id2,
           product_sku: list.product_sku,
           desc: list._desc,
           product_images: list.product_images,
