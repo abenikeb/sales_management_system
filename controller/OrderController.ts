@@ -1,8 +1,18 @@
 // offer Section
 import { Request, Response, NextFunction } from "express";
 import _ from "lodash";
-import { OrderInputs, UserPayload } from "../dto";
-import { CreateOrderItem, CreateOrderType, Product, User } from "../model";
+import { OrderInputs, OrderType, UserPayload } from "../dto";
+import {
+  CreateOrderItem,
+  CreateOrderType,
+  CreateReportItem,
+  Customer,
+  OrderNotification,
+  Product,
+  ProductPrice,
+  User,
+  UserCategory,
+} from "../model";
 
 // export const ApplyOffer = async (
 //   req: Request,
@@ -26,39 +36,6 @@ import { CreateOrderItem, CreateOrderType, Product, User } from "../model";
 //       }
 //     }
 //   }
-// };
-
-/* ---------  Assign Order for Delivery ------------*/
-// const AssignDeliveryBoy = async (orderID: string, vandorID: string) => {
-//   // find the vandor
-//   const vandor = await Vandor.findById(vandorID);
-//   if (!vandor) return;
-
-//   let areaCode = vandor.pincode;
-//   let vandorLat = vandor.lat;
-//   let vandorLng = vandor.lng;
-
-//   // find avaliable delivery Boy
-//   const avaliableDelivery = await DeliveryUser.find({
-//     pinCode: areaCode,
-//     isAvalaible: true,
-//     verified: true,
-//   });
-
-//   //cheak the nearst delivey boy and Assign
-//   if (!avaliableDelivery) {
-//     console.log(`Delivery person ${avaliableDelivery[0]}`);
-//     return;
-//   }
-
-//   //update the delivery ID
-//   const currentOrder = await Order.findById(orderID);
-//   if (!currentOrder) return;
-
-//   currentOrder.deliveryID = avaliableDelivery[0].id;
-//   await currentOrder.save();
-//   console.log(currentOrder);
-//   // push notification using firebase
 // };
 
 //payment section
@@ -113,77 +90,124 @@ import { CreateOrderItem, CreateOrderType, Product, User } from "../model";
 //     return { status: true, currentTransaction };
 // };
 
-//order Section
+/*
+ * CREATE ORDER SECTION
+ */
 
 export const CreateOrder = async (req: Request, res: Response) => {
-  // grab current login Customer
   const user = req.user as UserPayload;
   if (!user)
     return res
       .status(401)
       .json({ message: "Access denied. No token provided." });
 
-  //   const { trnxId, amount, items } = <OrderInputs>req.body;
-  const { amount, items, customer_id, remarks } = <OrderInputs>req.body;
-
   let profile = await User.findById({ id: user.id });
   if (!profile) return res.status(400).json({ message: "Invalid profile!" });
 
+  const { items, customer_id, remarks } = <OrderInputs>req.body;
+
+  const customer = await Customer.findById({ id: customer_id });
+  if (!customer.rows[0])
+    return res.status(400).json({ error: "Invalid Customer." });
+
+  const result = await Customer.findUsersCategory({
+    customerId: customer_id,
+  });
+  const user_categories_id = result.rows[0].category_id;
+
+  //Random number generate as orderID assign for order
   let orderID = `${Math.floor(Math.random() * 89999) + 1000}`;
   let productItems = [] as Array<any>;
-  let cartItems = [] as Array<any>;
+  let productCollection = [] as Array<any>;
   let netAmount = 0.0;
-  let created_by = "";
+  let totalPromotion = 0.0;
 
-  // grab order items from request {{id:xx, unit:xx}}
-
-  //calculate order amount
-  // const products = await Product.findInId({ items: items });
+  /*
+   * find the product info from incoming items collection array
+   * this is because orders amount calculated at the backend
+   */
   const products = _.map(items, (item) => item.product_id);
   for (let id = 0; id < products.length; id++) {
     productItems.push(
       await (
-        await Product.findById({ id: products[id] })
+        await Product.findWithPriceAndPromotionById({
+          id: products[id],
+          user_categories_id: user_categories_id,
+        })
       ).rows[0]
     );
   }
 
-  productItems.map((product) => {
-    items.map(({ product_id, quantity }) => {
-      if (product.id == product_id) {
-        created_by = product.created_by;
-        netAmount += 10 * quantity;
-        cartItems.push({ product, quantity });
-      }
+  if (productItems) {
+    productItems.map((product) => {
+      items.map(async ({ product_id, qty, qty_promotion }) => {
+        if (product && product.id == product_id) {
+          netAmount += product.price * qty;
+          totalPromotion += product.amount_price * qty_promotion;
+
+          productCollection.push({
+            product,
+            qty,
+            qty_promotion,
+            customer_id,
+            user_categories_id,
+          });
+        }
+      });
     });
-  });
+  }
 
   //create order with item description
-  if (!cartItems) return false;
+  if (!productCollection) return false;
   // create order
-  const currentOrder = new CreateOrderType({
+  const order = new CreateOrderType({
     netPrice: netAmount,
+    totalPromotion,
     orderId: orderID,
     customer_id: customer_id,
-    approved_by: profile.rows[0].id,
-    status: 1,
+    approved_by: profile.rows[0].user_name,
+    status: 1, // status assigned 1 always when created
     remarks: remarks,
     payment_via: "",
-    modified_at: new Date(),
-  } as any);
+  } as OrderType);
 
-  const orderResult = await currentOrder.create();
+  const orderResult = await order.create();
 
-  if (!orderResult) return false;
-  _.map(cartItems, async ({ product, quantity }) => {
-    const orderItem = new CreateOrderItem({
-      order_id: orderID,
-      product_id: product.id,
-      is_promotion: false,
-      quantity: quantity,
-    });
-    await orderItem.create();
-  });
+  if (!orderResult)
+    res.status(400).json({ error: "The Order was unable to be created." });
+
+  const resultOrderItemCollection = _.map(
+    productCollection,
+    async ({ product, qty, qty_promotion }) => {
+      const orderItem = new CreateOrderItem({
+        order_id: orderResult.rows[0].id,
+        product_id: product.id,
+        qty_promotion,
+        qty,
+      });
+      await orderItem.create();
+    }
+  );
+
+  if (!resultOrderItemCollection)
+    res
+      .status(400)
+      .json({ error: "The Order items was unable to be created." });
+
+  const users = await User.findIndex(1, 2);
+
+  // push notifications to [admin, fince & other parties] after crateing an order
+  const notification = new OrderNotification({
+    header: "A new order has been created.!",
+    message: `Customer ${customer.rows[0].first_name} ${customer.rows[0].last_name} receives a sales order, which is approved by sales officer ${profile.rows[0].user_name}. Please review and authorize the order.`,
+    type: 1,
+    receiver_id: users.rows.map((user) => {
+      return user.id;
+    }),
+    status: 1,
+    link_url: `api/users/orders/?id=${orderResult.rows[0].id}`,
+  } as OrderNotification);
+  await notification.create();
 
   // profile.cart = [] as Array<any>;
   // profile.orders.push(currentOrder);
@@ -197,7 +221,90 @@ export const CreateOrder = async (req: Request, res: Response) => {
 
   // await AssignDeliveryBoy(currentOrder.id, vendorId);
   // finally update orders to user account
-  return res.status(200).json({ orderResult: orderResult.rows[0] });
+  return res.status(200).json({ orderResult: orderResult });
+};
+
+/*
+ * APPROVE ORDER SECTION
+ */
+
+export const approveOrderStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  let user = req.user;
+  if (!user)
+    return res
+      .status(401)
+      .json({ message: "Access denied. No token provided." });
+
+  let profile = await User.findById({ id: user.id });
+  if (!profile) return res.status(400).json({ message: "Invalid profile!" });
+
+  const { orderId, status } = req.body;
+
+  if (status == 2) {
+    const result = await CreateOrderType.save({ id: orderId, status });
+    if (!result.rows[0]) return false;
+
+    // push notifications to sales oficer
+    const notification = new OrderNotification({
+      header: "The order status changed!",
+      message: `The order is creaed and approved by`,
+      type: 1,
+      receiver_id: [2],
+      status: 1,
+      link_url: `api/users/orders/?id=${result.rows[0].id}`,
+    } as OrderNotification);
+    await notification.create();
+  } else if (status == 3) {
+    const result = await CreateOrderType.save({ id: orderId, status });
+    if (!result.rows[0]) return false;
+
+    const orderItems = await CreateOrderItem.findByOrderId({
+      id: orderId,
+    });
+
+    // generate report
+    _.map(
+      orderItems.rows,
+      async ({ customer_id, product_id, quantity, promotion }) => {
+        const reportItem = new CreateReportItem({
+          customer_id,
+          user_categories_id: await (
+            await Customer.findUsersCategory({
+              customerId: Number(customer_id),
+            })
+          ).rows[0].category_id,
+          product_id,
+          promotion,
+          quantity,
+        } as CreateReportItem);
+        await reportItem.create();
+      }
+    );
+
+    // push notification after generating a report to admin/super admin
+    const notification = new OrderNotification({
+      header: "The status of your order has been updated!",
+      message: `The order has been updated in the sales report.`,
+      type: 1,
+      receiver_id: [2],
+      status: 1,
+      link_url: `api/users/orders/?=${result.rows[0].id}`,
+    } as OrderNotification);
+    await notification.create();
+  }
+};
+
+/*
+ * Helper functions
+ */
+const price = async (id: any) => {
+  const product = await ProductPrice.findById({ id });
+  const price = product.rows[0]?.price;
+  !price ? false : price;
 };
 
 // export const GetOrders = async (
@@ -242,7 +349,7 @@ export const CreateOrder = async (req: Request, res: Response) => {
 //   let product = await Product.findById(product_id);
 //   if (!product) return;
 
-//   let cartItems = profile.cart;
+//   let productCollection = profile.cart;
 
 //   /*
 //    *finding if there is cart item in the profile
@@ -277,24 +384,6 @@ export const CreateOrder = async (req: Request, res: Response) => {
 //   profile.cart = cartItems;
 //   await profile.save();
 //   return res.json(profile);
-// };
-
-// export const GetCarts = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ) => {
-//   const user = <UserPayload>req.user;
-
-//   if (!user)
-//     return res
-//       .status(401)
-//       .json({ message: "Access denied. No token provided." });
-
-//   const profile = await User.findById(user.id).populate("cart.product");
-//   if (!profile) return;
-
-//   return res.json(profile.cart);
 // };
 
 // export const DeleteCart = async (

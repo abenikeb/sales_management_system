@@ -109,6 +109,7 @@ CREATE TABLE "product_promotion" (
   "created_at" timestamp,
   "modified_at" timestamp
 );
+
 DELETE FROM product_promotion
   WHERE id = 3
   RETURNING *;
@@ -155,7 +156,7 @@ CREATE TABLE "report" (
   "id" BIGSERIAL PRIMARY KEY,
   "customer_id" int,
   "product_id" int,
-  "user_categories_id" int,
+  "user_categories_id" int, 
   "quantity" int,
   "amount" numeric(10,2),
   "created_at" timestamp DEFAULT (now())

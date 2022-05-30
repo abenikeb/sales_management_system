@@ -18,14 +18,15 @@ export const EXCISE_PERCENT = 0.1;
 
 export interface ProductItems {
   product_id: number;
-  is_promotion: boolean;
-  quantity: number;
+  qty_promotion: number;
+  qty: number;
 }
 
 export class OrderInputs {
   trnxId: string;
   amount: number;
   customer_id: number;
+  user_categories_id: number;
   remarks: string;
   items: [ProductItems];
 }
@@ -66,28 +67,17 @@ export class CreateOrderType {
 }
 
 export interface OrderType {
-  orderId: number;
+  orderId?: string;
   netPrice: number;
+  totalPromotion: number;
   addedTax?: number;
   excise_tax?: number;
   grossPrice?: number;
   remarks?: string;
-  customer_id: string;
+  customer_id: number;
   status: number;
   approved_by: string;
   payment_via?: string;
   created_at: Date;
   modified_at?: Date;
 }
-
-// Helpers
-// export const GenerateOrderPrice = (netPrice: number): OrderPrice => {
-//   const orderPrice: OrderPrice = {
-//     netPrice,
-//     addedTax: VAT_PERCENT * netPrice,
-//   };
-
-//   orderPrice.grossPrice = orderPrice.addedTax + orderPrice.netPrice;
-
-//   return orderPrice;
-// };
