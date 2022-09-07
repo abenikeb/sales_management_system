@@ -14,6 +14,8 @@ import {
   UserCategory,
 } from "../model";
 
+export const INDEX_1 = 1;
+export const INDEX_2 = 2;
 // export const ApplyOffer = async (
 //   req: Request,
 //   res: Response,
@@ -126,6 +128,7 @@ export const CreateOrder = async (req: Request, res: Response) => {
    * find the product info from incoming items collection array
    * this is because orders amount calculated at the backend
    */
+
   const products = _.map(items, (item) => item.product_id);
   for (let id = 0; id < products.length; id++) {
     productItems.push(
@@ -194,9 +197,9 @@ export const CreateOrder = async (req: Request, res: Response) => {
       .status(400)
       .json({ error: "The Order items was unable to be created." });
 
-  const users = await User.findIndex(1, 2);
+  // push notifications to [admin, fince & other parties] after crateing an order.
 
-  // push notifications to [admin, fince & other parties] after crateing an order
+  const users = await User.findIndex({ _index1: INDEX_1, _index2: INDEX_2 });
   const notification = new OrderNotification({
     header: "A new order has been created.!",
     message: `Customer ${customer.rows[0].first_name} ${customer.rows[0].last_name} receives a sales order, which is approved by sales officer ${profile.rows[0].user_name}. Please review and authorize the order.`,
@@ -207,20 +210,9 @@ export const CreateOrder = async (req: Request, res: Response) => {
     status: 1,
     link_url: `api/users/orders/?id=${orderResult.rows[0].id}`,
   } as OrderNotification);
+
   await notification.create();
 
-  // profile.cart = [] as Array<any>;
-  // profile.orders.push(currentOrder);
-
-  // if (!currentTransaction) return;
-  // currentTransaction.orderId = orderID;
-  // currentTransaction.vandorId = vendorId;
-  // currentTransaction.status = "CONFIRMED";
-
-  // await currentTransaction.save();
-
-  // await AssignDeliveryBoy(currentOrder.id, vendorId);
-  // finally update orders to user account
   return res.status(200).json({ orderResult: orderResult });
 };
 

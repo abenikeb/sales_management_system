@@ -57,16 +57,15 @@ export class User {
     return pool.query(sql);
   }
 
-  static findIndex(ind1: number, ind2: number) {
+  static findIndex(payload: { _index1: number; _index2: number }) {
     const sql = `SELECT U.id FROM users as U
-                 WHERE U.user_group IN (${ind1},${ind2})`;
+                 WHERE U.user_group IN (${payload._index1},${payload._index2})`;
     return pool.query(sql);
   }
 
   static findOne(payload: { tel: string }) {
     const sql = `SELECT * FROM users WHERE tel = $1`;
     return pool.query(sql, [payload.tel]);
-    // return result.rows.length > 0 ? true : false;
   }
 
   static findById(payload: { id: number }) {
