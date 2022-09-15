@@ -268,9 +268,11 @@ export const CreateCustomer = async (
     validationError: { target: true },
   });
   if (customerInputErrors.length > 0) {
-    return res
-      .status(400)
-      .json(_.map(customerInputErrors, (error: any) => error.constraints));
+    return res.status(400).json(
+      _.map(customerInputErrors, (error: any) => {
+        return { err: error.constraints, property: error.property };
+      })
+    );
   }
 
   const {
@@ -288,7 +290,7 @@ export const CreateCustomer = async (
 
   const existCustomer = await Customer.findOne({ tel: tel });
   if (existCustomer.rows.length > 0)
-    return res.status(400).json({ message: "Customer already registered." });
+    return res.status(401).json({ message: "Customer already registered." });
 
   const customer = await new Customer({
     first_name,
@@ -320,11 +322,7 @@ export const CreateCustomer = async (
   return res
     .header("x-auth-token", signture)
     .header("access-control-expose-headers", "x-auth-token")
-    .json({
-      signture: signture,
-      name: result.rows[0].name,
-      email: result.rows[0].email,
-    });
+    .json(result.rows[0]);
 };
 
 export const GetCustomers = async (
@@ -333,8 +331,7 @@ export const GetCustomers = async (
   next: NextFunction
 ) => {
   const customer = await Customer.find();
-  if (!customer.rows)
-    return res.status(200).json({ message: "No Customer Registered!" });
+  if (!customer.rows) return res.json({ message: "No Customer Registered!" });
 
   return res.json(customer.rows);
 };
@@ -419,33 +416,52 @@ export const UpdateCustomerProfile = async (req: Request, res: Response) => {
       .json(_.map(customerInputErrors, (error: any) => error.constraints));
   }
 
-  const customerId = req.query.customerId as any;
+  const customerId = req.params.id as any;
 
   let customer = (await Customer.findById({ id: customerId })) as any;
-  console.log({ customer: customer });
 
   if (!customer.rows[0])
     return res
       .status(404)
       .send({ error: "The customer with the given Id doesnot exist!" });
 
-  const { first_name, last_name, email } = customerInput;
+  const {
+    first_name,
+    last_name,
+    email,
+    tel,
+    territory,
+    city,
+    category_id,
+    business_licenses_no,
+    plate_no,
+    type_id,
+  } = customerInput;
 
   customer.first_name = first_name;
   customer.last_name = last_name;
   customer.email = email;
+  customer.tel = tel;
+  customer.territory = territory;
+  customer.city = city;
+  customer.category_id = category_id;
+  customer.business_licenses_no = business_licenses_no;
+  customer.plate_no = plate_no;
+  customer.type_id = type_id;
 
   const result = await Customer.save({
     profile: customer,
-    id: customerId,
+    customerId: customerId,
   });
 
-  if (!result.rows[0])
-    return res
-      .status(404)
-      .send({ error: "The customer with the given Id doesnot exist!" });
+  // console.log("RES", result);
 
-  res.send(result.rows[0]);
+  // if (!result.rows[0])
+  //   return res
+  //     .status(404)
+  //     .send({ error: "The customer with the given Id doesnot exist!" });
+
+  res.send(true);
 };
 
 export const DeleteCustomer = async (req: Request, res: Response) => {
@@ -461,6 +477,18 @@ export const DeleteCustomer = async (req: Request, res: Response) => {
       .send("The customer with the given Id doesnot exist!");
 
   res.send(result.rows[0]);
+};
+
+export const GetCustomerPaymentType = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const customer = await Customer.findPayementTypeId();
+  if (!customer.rows)
+    return res.status(400).json({ message: "No Type Id Registered!" });
+
+  return res.json(customer.rows);
 };
 
 /*
@@ -486,11 +514,9 @@ export const CreateUserCategory = async (req: Request, res: Response) => {
 
 export const GetUserCategories = async (req: Request, res: Response) => {
   const result = await UserCategory.find();
-  if (!result.rows[0]) return res.json({ message: "Error found" });
+  if (!result.rows[0]) return res.status(400).json({ message: "Error found" });
 
-  return res.json({
-    result: result.rows,
-  });
+  return res.json(result.rows);
 };
 
 export const GetUserCategoryById = async (req: Request, res: Response) => {

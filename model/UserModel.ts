@@ -142,8 +142,10 @@ export class Customer {
     return result;
   }
 
+  // find a customer including customer category
   static find() {
-    const sql = `SELECT * FROM customers`;
+    const sql = `SELECT c.*, u.name FROM customers as c LEFT JOIN user_categories as 
+                 u ON c.category_id = u.id`;
     return pool.query(sql);
   }
 
@@ -173,15 +175,47 @@ export class Customer {
     return pool.query(sql);
   }
 
-  static save(payload: { profile: any; id: number }) {
-    const sql = `UPDATE customers SET first_name = $1, last_name = $2, email = $3 WHERE id = $4 RETURNING *`;
-    const { first_name, last_name, email } = payload.profile;
-    return pool.query(sql, [first_name, last_name, email, payload.id]);
+  static save(payload: { profile: any; customerId: any }) {
+    const sql = `UPDATE customers SET first_name = $1, last_name = $2, email = $3, tel = $4, territory = $5,
+                 city = $6, category_id = $7, business_licenses_no = $8, plate_no = $9, type_id = $10 
+                 WHERE id = $11`;
+    const {
+      first_name,
+      last_name,
+      email,
+      tel,
+      territory,
+      city,
+      category_id,
+      business_licenses_no,
+      plate_no,
+      type_id,
+      id,
+    } = payload.profile;
+
+    return pool.query(sql, [
+      first_name,
+      last_name,
+      email,
+      tel,
+      territory,
+      city,
+      category_id,
+      business_licenses_no,
+      plate_no,
+      type_id,
+      payload.customerId,
+    ]);
   }
 
   static findByIdAndRemove(payload: { id: number }) {
     const sql = `DELETE FROM customers WHERE id = $1 RETURNING *`;
     return pool.query(sql, [payload.id]);
+  }
+
+  static findPayementTypeId() {
+    const sql = `SELECT * FROM payment_type`;
+    return pool.query(sql);
   }
 }
 

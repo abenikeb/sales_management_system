@@ -44,7 +44,6 @@ export class EditProfile {
 
 export class CreateUserLogin {
   @IsNotEmpty()
-  @Length(7, 15)
   tel: string;
 
   @Length(6, 50)
@@ -93,8 +92,6 @@ export class CreateCustomerInput {
   email: string;
 
   @IsNotEmpty()
-  @IsInt()
-  @Min(1)
   category_id: Number;
 
   @IsNotEmpty()
@@ -114,8 +111,7 @@ export class CreateCustomerInput {
   @Length(3, 50)
   city: string;
 
-  @IsInt()
-  type_id: number;
+  type_id: string;
 
   // @IsInt()
   // @Min(0)
@@ -140,4 +136,13 @@ export class EditCustomerProfile {
 
   @IsEmail()
   email: string;
+
+  category_id: any;
+  business_licenses_no: any;
+  plate_no: any;
+  type_id: any;
+  territory: any;
+
+  tel: string;
+  city: string;
 }

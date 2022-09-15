@@ -19,6 +19,7 @@ import {
   UpdateUserCategory,
   RemoveUsersCategory,
   GetProductWithPrice_ByCategoryId,
+  GetCustomerPaymentType,
 } from "../controller";
 import { AdminAuth, Authenticate } from "../middleware";
 
@@ -46,18 +47,15 @@ router.get(
   GetCustomersByUserCategory
 );
 router.get("/get-customers-by-search", Authenticate, GetCustomerBySearch);
-router.patch(
-  "/update-customer-profile?:customerId",
-  Authenticate,
-  UpdateCustomerProfile
-);
+router.put("/update-customer-profile/:id", Authenticate, UpdateCustomerProfile);
 router.delete("/remove-customer", [Authenticate, AdminAuth], DeleteCustomer);
 
+router.get("/find-payement-type-id", GetCustomerPaymentType);
 /*
 USER CAEGORY SECTION
 */
 router.post("/create-user-category", Authenticate, CreateUserCategory);
-router.get("/get-user-categories", Authenticate, GetUserCategories);
+router.get("/get-user-categories", GetUserCategories);
 router.get("/get-user-category-by-id/:id", Authenticate, GetUserCategoryById);
 
 router.patch("/update-user-category?:id", Authenticate, UpdateUserCategory);
