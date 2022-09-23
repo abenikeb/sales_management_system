@@ -120,8 +120,8 @@ export const CreateOrder = async (req: Request, res: Response) => {
   //Random number generate as orderID assign for order
   let orderID = `${Math.floor(Math.random() * 89999) + 1000}`;
   let productItems = [] as Array<any>;
+  // let productCollection = [] as Array<any>;
   let netAmount = 0.0;
-  let productCollection = [] as Array<any>;
   let totalPromotion = 0.0;
 
   /*
@@ -131,39 +131,39 @@ export const CreateOrder = async (req: Request, res: Response) => {
 
   const products = _.map(items, (item) => item.product_id);
 
-  console.log("products", products);
-  for (let id in products) {
+  for (let id = 0; id < products.length; id++) {
     const result = await Product.findWithPriceAndPromotionById({
       id: products[id],
       user_categories_id: user_categories_id,
     });
-    console.log("result", result.rows);
     productItems.push(result.rows[0]);
   }
 
   console.log("productItems", productItems);
 
-  if (!productItems) return null;
+  if (productItems) {
+    productItems.map((product) => {
+      items.map(({ product_id, qty, qty_promotion }) => {
+        if (product && product.id == product_id) {
+          netAmount += product.price * qty;
+          totalPromotion += product.amount_price * qty_promotion;
 
-  productItems.map((product) => {
-    return items.map(({ product_id, qty, qty_promotion }) => {
-      if (product && product.id == product_id) {
-        netAmount += product.price * qty;
-        totalPromotion += product.amount_price * qty_promotion;
-
-        productCollection.push({
-          product,
-          qty,
-          qty_promotion,
-          customer_id,
-          user_categories_id,
-        });
-      }
+          //  productCollection.push({
+          //     product,
+          //     qty,
+          //     qty_promotion,
+          //     customer_id,
+          //     use r_categories_id,
+          //   });
+        }
+      });
     });
-  });
+  }
 
-  console.log("netAmount", netAmount);
+  // console.log("productCollection", productCollection);
 
+  //create order with item description
+  // if (!productCollection) return false;
   // create order
   const order = new CreateOrderType({
     netPrice: netAmount,
@@ -176,46 +176,46 @@ export const CreateOrder = async (req: Request, res: Response) => {
     payment_via: "",
   } as OrderType);
 
-  const orderResult = await order.create();
+  // const orderResult = await order.create();
 
-  if (!orderResult)
-    res.status(400).json({ message: "The Order was unable to be created." });
+  // if (!orderResult)
+  //   res.status(400).json({ message: "The Order was unable to be created." });
 
-  const resultOrderItemCollection = _.map(
-    productCollection,
-    async ({ product, qty, qty_promotion }) => {
-      const orderItem = new CreateOrderItem({
-        order_id: orderResult.rows[0].id,
-        product_id: product.id,
-        qty_promotion,
-        qty,
-      });
-      await orderItem.create();
-    }
-  );
+  // const resultOrderItemCollection = _.map(
+  //   productCollection,
+  //   async ({ product, qty, qty_promotion }) => {
+  //     const orderItem = new CreateOrderItem({
+  //       order_id: orderResult.rows[0].id,
+  //       product_id: product.id,
+  //       qty_promotion,
+  //       qty,
+  //     });
+  //     await orderItem.create();
+  //   }
+  // );
 
-  if (!resultOrderItemCollection)
-    res
-      .status(400)
-      .json({ error: "The Order items was unable to be created." });
+  // if (!resultOrderItemCollection)
+  //   res
+  //     .status(400)
+  //     .json({ error: "The Order items was unable to be created." });
 
   // push notifications to [admin, fince & other parties] after crateing an order.
 
-  const users = await User.findIndex({ _index1: INDEX_1, _index2: INDEX_2 });
-  const notification = new OrderNotification({
-    header: "A new order has been created.!",
-    message: `Customer ${customer.rows[0].first_name} ${customer.rows[0].last_name} receives a sales order, which is approved by sales officer ${profile.rows[0].user_name}. Please review and authorize the order.`,
-    type: 1,
-    receiver_id: users.rows.map((user) => {
-      return user.id;
-    }),
-    status: 1,
-    link_url: `api/users/orders/?id=${orderResult.rows[0].id}`,
-  } as OrderNotification);
+  // const users = await User.findIndex({ _index1: INDEX_1, _index2: INDEX_2 });
+  // const notification = new OrderNotification({
+  //   header: "A new order has been created.!",
+  //   message: `Customer ${customer.rows[0].first_name} ${customer.rows[0].last_name} receives a sales order, which is approved by sales officer ${profile.rows[0].user_name}. Please review and authorize the order.`,
+  //   type: 1,
+  //   receiver_id: users.rows.map((user) => {
+  //     return user.id;
+  //   }),
+  //   status: 1,
+  //   link_url: `api/users/orders/?id=${orderResult.rows[0].id}`,
+  // } as OrderNotification);
 
-  await notification.create();
+  // await notification.create();
 
-  return res.status(200).json({ orderResult: orderResult.rows[0] });
+  // return res.status(200).json({ orderResult: orderResult });
 };
 
 /*
