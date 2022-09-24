@@ -25,13 +25,18 @@ export const GenerateSignature = (payload: UserPayload) => {
 };
 
 export const ValidateSignture = async (req: any, res: Response) => {
-  const token = req.get("Authorization") || req.header("x-auth-token");
-  // if (!token) return res.status(401).json({message:"Access denied. No token provided."});
+  const token = req.header("x-auth-token");
+
   if (!token) return false;
 
   try {
+    // const payload = (await jwt.verify(
+    //   token.split(" ")[1],
+    //   process.env.JWT_PRIVATE_KEY as string
+    // )) as UserPayload;
+
     const payload = (await jwt.verify(
-      token.split(" ")[1],
+      token,
       process.env.JWT_PRIVATE_KEY as string
     )) as UserPayload;
 

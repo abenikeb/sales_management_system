@@ -131,7 +131,7 @@ export const GetAllProductsWithPriceAndCategory = async (
   );
 };
 
-// but it is includded in UserCategory --> controller --> GetProductWithPrice_ByCategoryId
+// but it is includded were also in UserCategory --> controller --> GetProductWithPrice_ByCategoryId
 export const GetProductWithPriceAndCategory_ById = async (
   req: Request,
   res: Response,

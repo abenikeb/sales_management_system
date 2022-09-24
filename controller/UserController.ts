@@ -112,7 +112,8 @@ export const UserLogin = async (
   const { tel, password } = userInputs;
 
   const existUser = await User.findOne({ tel: tel });
-  if (!existUser) return res.status(400).json("Invalid phone no or password");
+  if (!existUser)
+    return res.status(400).json({ message: "Invalid phone no or password" });
 
   const validPassword = await ValidatePassword(
     password,
@@ -120,7 +121,8 @@ export const UserLogin = async (
     existUser.rows[0].salt
   );
 
-  if (!validPassword) return res.status(400).json("Invalid email or password");
+  if (!validPassword)
+    return res.status(400).json({ message: "Invalid phone no or password" });
 
   const signture = GenerateSignature({
     id: existUser.rows[0].id,
@@ -129,7 +131,7 @@ export const UserLogin = async (
     verified: existUser.rows[0].verified,
     user_group: existUser.rows[0].user_group,
   } as UserPayload);
-  res.status(200).json(signture);
+  res.status(200).json({ token: signture, expiresIn: 3600 });
 };
 
 // export const UserVerify = async (
@@ -268,9 +270,11 @@ export const CreateCustomer = async (
     validationError: { target: true },
   });
   if (customerInputErrors.length > 0) {
-    return res
-      .status(400)
-      .json(_.map(customerInputErrors, (error: any) => error.constraints));
+    return res.status(400).json(
+      _.map(customerInputErrors, (error: any) => {
+        return { err: error.constraints, property: error.property };
+      })
+    );
   }
 
   const {
@@ -288,7 +292,7 @@ export const CreateCustomer = async (
 
   const existCustomer = await Customer.findOne({ tel: tel });
   if (existCustomer.rows.length > 0)
-    return res.status(400).json({ message: "Customer already registered." });
+    return res.status(401).json({ message: "Customer already registered." });
 
   const customer = await new Customer({
     first_name,
@@ -320,11 +324,7 @@ export const CreateCustomer = async (
   return res
     .header("x-auth-token", signture)
     .header("access-control-expose-headers", "x-auth-token")
-    .json({
-      signture: signture,
-      name: result.rows[0].name,
-      email: result.rows[0].email,
-    });
+    .json(result.rows[0]);
 };
 
 export const GetCustomers = async (
@@ -333,8 +333,7 @@ export const GetCustomers = async (
   next: NextFunction
 ) => {
   const customer = await Customer.find();
-  if (!customer.rows)
-    return res.status(200).json({ message: "No Customer Registered!" });
+  if (!customer.rows) return res.json({ message: "No Customer Registered!" });
 
   return res.json(customer.rows);
 };
@@ -356,7 +355,11 @@ export const GetCustomersByUserCategory = async (
   req: Request,
   res: Response
 ) => {
-  const categoryId = req.query.id as any;
+  console.log("kk");
+
+  const categoryId = req.params.id as any;
+
+  console.log("CATEID", categoryId);
 
   const result = await UserCategory.findCustomer({ id: categoryId });
 
@@ -368,7 +371,7 @@ export const GetCustomersByUserCategory = async (
         customer: {
           id: list.id,
           product_sku: list.product_sku,
-          first_name: list.first_name,
+          name: list.first_name,
           last_name: list.last_name,
           email: list.email,
           tel: list.tel,
@@ -378,10 +381,11 @@ export const GetCustomersByUserCategory = async (
           city: list.city,
           type: list.type_id,
           approved_by: list.approved_by,
+          categoryId: list.category_id,
         },
         usersCategory: {
           id: list.category_id,
-          name: list.name,
+          // name: list.name,
           desc: list._desc,
         },
       };
@@ -414,38 +418,59 @@ export const UpdateCustomerProfile = async (req: Request, res: Response) => {
     validationError: { target: true },
   });
   if (customerInputErrors.length > 0) {
-    return res
-      .status(400)
-      .json(_.map(customerInputErrors, (error: any) => error.constraints));
+    return res.status(400).json(
+      _.map(customerInputErrors, (error: any) => {
+        return { err: error.constraints, property: error.property };
+      })
+    );
   }
 
-  const customerId = req.query.customerId as any;
+  const customerId = req.params.id as any;
 
   let customer = (await Customer.findById({ id: customerId })) as any;
-  console.log({ customer: customer });
 
   if (!customer.rows[0])
     return res
       .status(404)
       .send({ error: "The customer with the given Id doesnot exist!" });
 
-  const { first_name, last_name, email } = customerInput;
+  const {
+    first_name,
+    last_name,
+    email,
+    tel,
+    territory,
+    city,
+    category_id,
+    business_licenses_no,
+    plate_no,
+    type_id,
+  } = customerInput;
 
   customer.first_name = first_name;
   customer.last_name = last_name;
   customer.email = email;
+  customer.tel = tel;
+  customer.territory = territory;
+  customer.city = city;
+  customer.category_id = category_id;
+  customer.business_licenses_no = business_licenses_no;
+  customer.plate_no = plate_no;
+  customer.type_id = type_id;
 
   const result = await Customer.save({
     profile: customer,
-    id: customerId,
+    customerId: customerId,
   });
 
-  if (!result.rows[0])
-    return res
-      .status(404)
-      .send({ error: "The customer with the given Id doesnot exist!" });
+  // console.log("RES", result);
 
-  res.send(result.rows[0]);
+  // if (!result.rows[0])
+  //   return res
+  //     .status(404)
+  //     .send({ error: "The customer with the given Id doesnot exist!" });
+
+  res.send(true);
 };
 
 export const DeleteCustomer = async (req: Request, res: Response) => {
@@ -463,6 +488,18 @@ export const DeleteCustomer = async (req: Request, res: Response) => {
   res.send(result.rows[0]);
 };
 
+export const GetCustomerPaymentType = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const customer = await Customer.findPayementTypeId();
+  if (!customer.rows)
+    return res.status(400).json({ message: "No Type Id Registered!" });
+
+  return res.json(customer.rows);
+};
+
 /*
  * USER_CATEGORY SECTION
  */
@@ -477,7 +514,7 @@ export const CreateUserCategory = async (req: Request, res: Response) => {
   } as UserCategory);
 
   const result = await userCategory.Create();
-  if (!result.rows[0]) return res.json({ message: "Error found" });
+  if (!result.rows[0]) return res.json("Error found");
 
   return res.json({
     result: result.rows[0],
@@ -486,20 +523,16 @@ export const CreateUserCategory = async (req: Request, res: Response) => {
 
 export const GetUserCategories = async (req: Request, res: Response) => {
   const result = await UserCategory.find();
-  if (!result.rows[0]) return res.json({ message: "Error found" });
+  if (!result.rows[0]) return res.status(400).json("Error found");
 
-  return res.json({
-    result: result.rows,
-  });
+  return res.json(result.rows);
 };
 
 export const GetUserCategoryById = async (req: Request, res: Response) => {
   const result = await UserCategory.findById({ id: req.params.id });
   if (!result.rows[0]) return res.json({ message: "Error found" });
 
-  return res.json({
-    result: result.rows[0],
-  });
+  return res.json(result.rows[0]);
 };
 
 export const GetProductWithPrice_ByCategoryId = async (
@@ -507,7 +540,7 @@ export const GetProductWithPrice_ByCategoryId = async (
   res: Response,
   next: NextFunction
 ) => {
-  const categoryId = req.query.id as any;
+  const categoryId = req.params.id as any;
 
   const listProduct = await UserCategory.findByPriceAndCategoryByCategoryId({
     id: categoryId,
@@ -518,14 +551,17 @@ export const GetProductWithPrice_ByCategoryId = async (
     listProduct.rows.map((list) => {
       return {
         product: {
+          id: list.id,
           product_sku: list.product_sku,
           desc: list._desc,
           product_images: list.product_images,
           created_by: list.created_by,
+          price: list.price,
+          // categoryId: list.id,
         },
         price: list.price,
         usersCategory: {
-          id: list.id,
+          // id: list.id,
           name: list.name,
         },
       };
@@ -534,7 +570,8 @@ export const GetProductWithPrice_ByCategoryId = async (
 };
 
 export const UpdateUserCategory = async (req: Request, res: Response) => {
-  const categoryId = req.query.id as any;
+  const categoryId = req.params.id as any;
+  console.log(categoryId);
 
   const { name, _desc } = req.body;
 
@@ -560,9 +597,7 @@ export const UpdateUserCategory = async (req: Request, res: Response) => {
   if (!result.rows)
     return res.status(404).json({ message: "Invalid User Category" });
 
-  return res.json({
-    result: result.rows[0],
-  });
+  return res.json(result.rows[0]);
 };
 
 export const RemoveUsersCategory = async (req: Request, res: Response) => {

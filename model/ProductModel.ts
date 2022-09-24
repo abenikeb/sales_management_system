@@ -90,7 +90,7 @@ export class Product {
     id: number;
     user_categories_id: number;
   }) {
-    const sql = `SELECT P.id, P.product_sku, P._desc, P.created_by, PP.price, PPT.amount_price FROM products as P 
+    const sql = `SELECT P.id, P.product_sku, P.created_by, PP.price, PPT.amount_price FROM products as P 
                  INNER JOIN product_prices as PP ON P.id = PP.product_id 
                  INNER JOIN product_promotion as PPT ON P.id = PPT.product_id
                  WHERE P.id = ${payload.id} AND 

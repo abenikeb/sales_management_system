@@ -1,0 +1,236 @@
+
+Table "users_group" {
+  "id" BIGSERIAL [pk]
+  "name" varchar
+  "_desc" varchar
+}
+
+Table "users" as U {
+  "id" BIGSERIAL [pk]
+  "first_name" varchar [not null]
+  "last_name" varchar [not null]
+  "verified" boolean
+  "email" varchar
+  "tel" varchar [not null]
+  "password" text
+  "salt" text
+  "otp" varchar
+  "otp_expiry" timestamp
+  // "city" varchar
+  "created_at" timestamp [default: `now()`]
+  "modified_at" timestamp [default: `now()`]
+  "user_group" int
+}
+
+Table "payment_type" as P{
+  "id" BIGSERIAL [pk]
+  "name" varchar
+  "_desc" varchar
+}
+
+Table "user_categories" as UC {
+  "id" BIGSERIAL [pk]
+  "name" varchar [not null]
+  "_desc" text
+  "created_at" timestamp
+  "modified_at" timestamp
+}
+
+Table "customers" {
+  "id" BIGSERIAL [pk]
+  "first_name" varchar [not null]
+  "last_name" varchar [not null]
+  "category_id" int [not null]
+  "email" varchar
+  "tel" varchar [not null]
+  "business_licenses_no" varchar
+  "type_no" int
+  "territory" varchar 
+  "city" varchar
+  "lat" "numeric(8, 6)"
+  "lng" "numeric(8, 6)"
+  "created_at" timestamp
+  "modified_at" timestamp
+
+Indexes {
+  category_id
+    }
+}
+Ref: customers.type_no > P.id
+Ref: customers.category_id > UC.id  
+
+// Table "products_status" {
+//   "id" BIGSERIAL [pk]
+//   "out_of_stock" int
+//   "in_stock" int
+//   "running_low" varchar [note: 'less than 10']
+// }
+
+// Table "product_sku" {
+//   "id" BIGSERIAL [pk]
+//   "name" varchar
+//   "_desc" text
+//   "created_at" timestamp
+//   "modified_at" timestamp
+// }
+
+Table "products" {
+  "id" BIGSERIAL [pk]
+  "name" varchar
+  "_desc" text
+  "product_sku" int [not null]
+  "product_images" text
+  // "inventory_id" int
+  // "price" "numeric(10, 2)" [not null]
+  // "status" int
+  // "vender_id" int [not null]
+  "created_at" date [default: `now()`]
+  "modified_at" date [default: `now()`]
+
+Indexes {
+  (product_sku) [name: "sku_id"]
+  product_sku [unique]
+}
+}
+
+Table "product_inventories" as PI {
+  "id" BIGSERIAL [pk]
+  "product_id" int
+  "quantity" int
+  "out_of_stock" int
+  "in_stock" int
+  "running_low" varchar [note: 'less than 10']
+  "created_at" timestamp
+  "modified_at" timestamp
+}
+
+Table "product_prices" as PP {
+  "id" BIGSERIAL [pk]
+  "product_id" int
+  "user_categories_id" int
+  "price" "numeric(10, 2)" [not null]
+  "created_at" timestamp
+  "modified_at" timestamp
+}
+
+Table "product_promotion" as PPT {
+  "id" BIGSERIAL [pk]
+  "product_id" int
+  "user_categories_id" int
+  "amount_price" "numeric(10, 2)" [not null]
+  "created_at" timestamp
+  "modified_at" timestamp
+}
+
+Ref:PI.product_id > products.id 
+REF:PP.product_id > products.id
+REF:PP.user_categories_id > UC.id
+REF:PPT.user_categories_id > UC.id
+
+Table "order_status" {
+  "id" BIGSERIAL [pk]
+  "name" varchar [not null]
+  "_desc" text
+  "created_at" timestamp
+  "modified_at" timestamp
+}
+
+Table "orders" {
+  "id" BIGSERIAL [pk]
+  "net_price" "numeric(10, 2)" [not null]
+  "add_tax" "numeric(10, 2)"
+  "excise_tax" "numeric(10, 2)"
+  "gross_price" "numeric(10, 2)"
+  "remarks" text
+  "customer_id" int [not null]
+  "status" int
+  "payment_via" varchar
+  "created_at" timestamp
+  "modified_at" timestamp
+
+Indexes {
+  (id, customer_id)
+}
+}
+
+Table "order_items" {
+  "id" BIGSERIAL [pk]
+  "order_id" int
+  "product_id" int
+  "is_promotion" boolean
+  "quantity" int [default: 1]
+}
+
+Table "report" as R {
+  "id" BIGSERIAL [pk]
+  "customer_id" int
+  "product_id" int
+  "user_categories_id" int
+  "quantity" int
+  "amount" numeric(10,2)
+  "created_at" timestamp [default: `now()`]
+}
+
+REF:R.customer_id > customers.id
+REF:R.product_id > products.id
+REF:R.user_categories_id > user_categories.id
+
+
+
+Table "notifications" {
+  "id" BIGSERIAL [pk]
+  "message" varchar [not null]
+  "isRead" boolean
+  "type" varchar [not null]
+  "receiver_id" int [not null]
+  "status" int [note: '1 or 2']
+  "created_at" timestamp [default: `now()`]
+  "modified_at" timestamp [default: `now()`]
+
+Indexes {
+  receiver_id
+  }
+}
+
+Table "chat" {
+  "id" BIGSERIAL [pk]
+  "from" int [not null]
+  "to" int [not null]
+  "message" text [not null]
+  "created_at" timestamp [default: `now()`]
+  "modified_at" timestamp [default: `now()`]
+
+Indexes {
+  (from, to)
+}
+}
+
+Ref:"users_group"."id" < "users"."user_group"
+
+// Ref:"customers"."id" < "products"."vender_id"
+
+// Ref:"product_sku"."id" < "products"."sku_id"
+
+// Ref:"products_status"."id" < "products"."status"
+
+// Ref:"users"."id" < "customers"."owner_id"
+
+Ref:"customers"."id" < "orders"."customer_id"
+
+Ref:"order_status"."id" < "orders"."status"
+
+// Ref:"customers"."id" < "orders"."vender_id"
+
+Ref:"orders"."id" < "order_items"."order_id"
+
+Ref:"products"."id" < "order_items"."product_id"
+
+Ref:"users"."id" < "notifications"."receiver_id"
+
+Ref:"users"."id" < "chat"."from"
+
+Ref:"users"."id" < "chat"."to"
+
+// Ref:"products"."id" < "cart"."product_id"
+
+// Ref:"users"."id" < "cart"."user_id"
