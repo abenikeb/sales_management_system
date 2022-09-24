@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "nodemon app.ts",
     "start": "node dist",
-    "postinstall": "tsc",
     "build": "tsc -p ."
   },
   "engines": {
