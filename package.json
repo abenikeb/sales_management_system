@@ -5,8 +5,7 @@
   "main": "app.ts",
   "scripts": {
     "dev": "nodemon app.ts",
-    "start": "node dist",
-    "postinstall": "tsc",
+    "start": "nodemon app.ts",
     "build": "tsc -p ."
   },
   "engines": {
