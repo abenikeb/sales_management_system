@@ -8,6 +8,10 @@
     "start": "node dist",
     "build": "tsc -p ."
   },
+  "engines": {
+    "node": "16.15.0",
+    "npm": "8.13.1"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/abenikeb/fetanDelivery-mvp.git"
