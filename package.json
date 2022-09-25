@@ -9,8 +9,8 @@
     "build": "tsc -p ."
   },
   "engines": {
-    "node": "16.15.0",
-    "npm": "8.13.1"
+    "node": "16.x",
+    "npm": "8.x"
   },
   "repository": {
     "type": "git",
