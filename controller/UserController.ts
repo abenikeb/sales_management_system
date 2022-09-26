@@ -366,7 +366,7 @@ export const GetCustomersByUserCategory = async (
   if (!result.rows) return res.json({ message: "Error found" });
 
   return res.json(
-    result.rows.map((list) => {
+    result.rows.map((list: any) => {
       return {
         customer: {
           id: list.id,
@@ -548,7 +548,7 @@ export const GetProductWithPrice_ByCategoryId = async (
   if (!listProduct.rows) return res.json({ Message: "No Product Found!" });
 
   return res.send(
-    listProduct.rows.map((list) => {
+    listProduct.rows.map((list: any) => {
       return {
         product: {
           id: list.id,

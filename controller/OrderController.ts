@@ -206,7 +206,7 @@ export const CreateOrder = async (req: Request, res: Response) => {
     header: "A new order has been created.!",
     message: `Customer ${customer.rows[0].first_name} ${customer.rows[0].last_name} receives a sales order, which is approved by sales officer ${profile.rows[0].user_name}. Please review and authorize the order.`,
     type: 1,
-    receiver_id: users.rows.map((user) => {
+    receiver_id: users.rows.map((user: any) => {
       return user.id;
     }),
     status: 1,

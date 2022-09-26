@@ -115,7 +115,7 @@ export const GetAllProductsWithPriceAndCategory = async (
   if (!listProduct.rows) return res.json({ Message: "No Product Found!" });
 
   return res.send(
-    listProduct.rows.map((list) => {
+    listProduct.rows.map((list: any) => {
       return {
         product: {
           id: list.id,
@@ -145,7 +145,7 @@ export const GetProductWithPriceAndCategory_ById = async (
   if (!listProduct.rows) return res.json({ Message: "No Product Found!" });
 
   return res.send(
-    listProduct.rows.map((list) => {
+    listProduct.rows.map((list: any) => {
       return {
         product: {
           id: list.id2,
