@@ -4,9 +4,9 @@
   "description": "Fetan delivery serivce back-end server as MVP",
   "main": "app.ts",
   "scripts": {
-    "dev": "nodemon app.ts",
-    "start": "nodemon app.ts",
-    "build": "tsc -p ."
+    "start": "node ./dist/app.js",
+    "build": "tsc -p .",
+    "dev": "nodemon app.ts"
   },
   "engines": {
     "node": "16.x",
