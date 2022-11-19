@@ -292,6 +292,17 @@ export const approveOrderStatus = async (
   }
 };
 
+export const GetOrders = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const orders = await CreateOrderType.findByCustomerAndStatus();
+  if (!orders.rows) return res.json({ message: "No Orders Found!" });
+
+  return res.json(orders.rows);
+};
+
 /*
  * Helper functions
  */

@@ -50,7 +50,7 @@ router.post("/add", [Authenticate, images], AddProduct);
 router.get("/get", Authenticate, GetProducts);
 router.get(
   "/get-all-product-with-price-and-category",
-  Authenticate,
+
   GetAllProductsWithPriceAndCategory
 );
 router.get(
