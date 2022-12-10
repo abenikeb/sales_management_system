@@ -1,7 +1,7 @@
-require("dotenv").config();
+// require("dotenv").config();
 import express from "express";
 import App from "./service/ExpressApp";
-import DB from "./service/DataBase";
+// import DB from "./service/DataBase";
 
 const app = express();
 
