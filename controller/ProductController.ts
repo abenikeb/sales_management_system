@@ -42,7 +42,7 @@ export const AddProduct = async (
 
   const imageCollections = [] as Array<string>;
   const files = req.files as [Express.Multer.File];
-  const images = files.map((file: Express.Multer.File) => file.filename);
+  const images = files?.map((file: Express.Multer.File) => file.filename);
   _.forEach(files, (uploadIage) => imageCollections.push(uploadIage.filename));
 
   // const CreateProductInputs = plainToClass(CreateProductInput, req.body);
@@ -54,9 +54,12 @@ export const AddProduct = async (
 
   const { product_sku, _desc } = req.body as any;
 
+  console.log({ product_sku: product_sku, _desc: _desc });
+
   const existProduct = await Product.findOne({ _sku: Number(product_sku) });
+  console.log({ existProduct: existProduct.rows[0] });
   if (existProduct.rows[0])
-    return res.status(401).send("Product alerady registerd!");
+    return res.status(405).send("Product alerady registerd!");
 
   const productCreate = new Product({
     _desc: _desc,
