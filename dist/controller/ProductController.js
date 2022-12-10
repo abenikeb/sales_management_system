@@ -29,7 +29,7 @@ const AddProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
             .json({ message: "Access denied. No token provided." });
     const imageCollections = [];
     const files = req.files;
-    const images = files.map((file) => file.filename);
+    const images = files === null || files === void 0 ? void 0 : files.map((file) => file.filename);
     lodash_1.default.forEach(files, (uploadIage) => imageCollections.push(uploadIage.filename));
     // const CreateProductInputs = plainToClass(CreateProductInput, req.body);
     // const CreateProductInputsError = await validate(CreateProductInputs, {
@@ -38,9 +38,11 @@ const AddProduct = (req, res, next) => __awaiter(void 0, void 0, void 0, functio
     // if (CreateProductInputsError.length > 0)
     //   return res.json(CreateProductInputsError);
     const { product_sku, _desc } = req.body;
+    console.log({ product_sku: product_sku, _desc: _desc });
     const existProduct = yield model_1.Product.findOne({ _sku: Number(product_sku) });
+    console.log({ existProduct: existProduct.rows[0] });
     if (existProduct.rows[0])
-        return res.status(401).send("Product alerady registerd!");
+        return res.status(405).send("Product alerady registerd!");
     const productCreate = new model_1.Product({
         _desc: _desc,
         product_images: imageCollections,

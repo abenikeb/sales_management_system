@@ -19,7 +19,8 @@ const app = (0, express_1.default)();
 function startServer() {
     return __awaiter(this, void 0, void 0, function* () {
         yield (0, ExpressApp_1.default)(app);
-        const port = process.env.PORT || 5000;
+        // const port = process.env.PORT || 5000;
+        const port = 5000;
         // const port = 5000;
         app.listen(port, () => {
             console.log(`Server is listing on Port ${port}`);

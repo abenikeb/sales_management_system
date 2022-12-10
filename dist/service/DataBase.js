@@ -1,17 +1,36 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const pg_1 = require("pg");
 require("dotenv").config();
-const pool = new pg_1.Pool({
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    database: process.env.DB_NAME,
+// local DB Connect
+// const pool = new Pool({
+//   user: process.env.DB_USER as string,
+//   password: process.env.DB_PASSWORD as string,
+//   host: process.env.DB_HOST as string,
+//   port: process.env.DB_PORT as any,
+//   database: process.env.DB_NAME as string,
+// });
+// pool.connect((err, client, release) => {
+//   if (err) {
+//     return console.error("Error acquiring client", err.stack);
+//   }
+// });
+// HEROKU DB Connect
+const { Client } = require("pg");
+const pool = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false,
+    },
 });
-pool.connect((err, client, release) => {
-    if (err) {
-        return console.error("Error acquiring client", err.stack);
-    }
-});
+pool.connect();
+// pool.query(
+//   "SELECT table_schema,table_name FROM information_schema.tables;",
+//   (err: any, res: any) => {
+//     if (err) throw err;
+//     for (let row of res.rows) {
+//       console.log(JSON.stringify(row));
+//     }
+//     pool.end();
+//   }
+// );
 exports.default = pool;

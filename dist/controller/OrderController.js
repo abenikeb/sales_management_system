@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.approveOrderStatus = exports.CreateOrder = exports.INDEX_2 = exports.INDEX_1 = void 0;
+exports.GetOrders = exports.approveOrderStatus = exports.CreateOrder = exports.INDEX_2 = exports.INDEX_1 = void 0;
 const lodash_1 = __importDefault(require("lodash"));
 const model_1 = require("../model");
 exports.INDEX_1 = 1;
@@ -241,6 +241,13 @@ const approveOrderStatus = (req, res, next) => __awaiter(void 0, void 0, void 0,
     }
 });
 exports.approveOrderStatus = approveOrderStatus;
+const GetOrders = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
+    const orders = yield model_1.CreateOrderType.findByCustomerAndStatus();
+    if (!orders.rows)
+        return res.json({ message: "No Orders Found!" });
+    return res.json(orders.rows);
+});
+exports.GetOrders = GetOrders;
 /*
  * Helper functions
  */

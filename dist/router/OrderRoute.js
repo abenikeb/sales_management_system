@@ -11,3 +11,4 @@ const controller_1 = require("../controller");
 const CommonAuth_1 = require("../middleware/CommonAuth");
 router.post("/create", CommonAuth_1.Authenticate, controller_1.CreateOrder);
 router.patch("/approve", CommonAuth_1.Authenticate, controller_1.approveOrderStatus);
+router.get("/get", CommonAuth_1.Authenticate, controller_1.GetOrders);

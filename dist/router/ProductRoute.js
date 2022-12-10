@@ -32,7 +32,7 @@ const images = (0, multer_1.default)({ storage: imageStorage }).array("images", 
  */
 router.post("/add", [CommonAuth_1.Authenticate, images], ProductController_1.AddProduct);
 router.get("/get", CommonAuth_1.Authenticate, ProductController_1.GetProducts);
-router.get("/get-all-product-with-price-and-category", CommonAuth_1.Authenticate, ProductController_1.GetAllProductsWithPriceAndCategory);
+router.get("/get-all-product-with-price-and-category", ProductController_1.GetAllProductsWithPriceAndCategory);
 router.get("/get-all-product-with-price-and-category-by-category-id?:id", CommonAuth_1.Authenticate, ProductController_1.GetProductWithPriceAndCategory_ById);
 router.get("/get-by-id", CommonAuth_1.Authenticate, ProductController_1.GetProductById);
 router.patch("/update?:id", CommonAuth_1.Authenticate, ProductController_1.UpdateProduct);

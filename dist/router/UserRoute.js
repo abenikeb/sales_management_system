@@ -23,7 +23,7 @@ router.patch("/edit_profile", middleware_1.Authenticate, controller_1.EditUserPr
 CUSTOMERS SECTION
 */
 router.post("/create-customer", middleware_1.Authenticate, controller_1.CreateCustomer);
-router.get("/get-customers", middleware_1.Authenticate, controller_1.GetCustomers);
+router.get("/get-customers", middleware_1.Authenticate, controller_1.GetOrders);
 router.get("/get-customers-by-id/:id", middleware_1.Authenticate, controller_1.GetCustomerByID);
 router.get("/get-customers-by-category-id/:id", middleware_1.Authenticate, controller_1.GetCustomersByUserCategory);
 router.get("/get-customers-by-search", middleware_1.Authenticate, controller_1.GetCustomerBySearch);

@@ -50,6 +50,13 @@ class CreateOrderType {
         const sql = `UPDATE orders SET status = $1 WHERE id = $2 RETURNING *`;
         return DataBase_1.default.query(sql, [payload.status, payload.id]);
     }
+    static findByCustomerAndStatus() {
+        const sql = `SELECT O.id, O.gross_price, O.approved_by, C.first_name, C.last_name, OS.name FROM orders as O
+                 INNER JOIN customers as C ON O.customer_id = C.id
+                 INNER JOIN order_status as OS ON O.status = OS.id                 
+                 `;
+        return DataBase_1.default.query(sql);
+    }
 }
 exports.CreateOrderType = CreateOrderType;
 class CreateOrderItem {
