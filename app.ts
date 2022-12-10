@@ -1,6 +1,6 @@
 require("dotenv").config();
-const express = require("express") as any;
-const App = require("./service/ExpressApp") as any;
+const express = require("express");
+const App = require("./service/ExpressApp.js");
 // import DB from "./service/DataBase";
 
 const app = express();
