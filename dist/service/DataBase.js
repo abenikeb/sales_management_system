@@ -14,7 +14,7 @@ require("dotenv").config();
 //     return console.error("Error acquiring client", err.stack);
 //   }
 // });
-// HEROKU DB Connect
+// REMOTE DB CONNECT
 const { Client } = require("pg");
 const pool = new Client({
     connectionString: process.env.DATABASE_URL,
