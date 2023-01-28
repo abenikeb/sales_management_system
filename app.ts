@@ -6,7 +6,7 @@ const app = express();
 
 async function startServer() {
   await App(app);
-  const port = 5000;
+  let port = process.env.PORT as any | 5000;
 
   app.listen(port, () => {
     console.log(`Server is listing on Port ${port}`);
