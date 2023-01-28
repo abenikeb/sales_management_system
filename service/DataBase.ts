@@ -17,7 +17,7 @@ require("dotenv").config();
 //   }
 // });
 
-// HEROKU DB Connect
+// REMOTE DB CONNECT
 
 const { Client } = require("pg");
 
